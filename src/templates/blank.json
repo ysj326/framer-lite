@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "name": "Blank",
+  "page": {
+    "id": "page-blank",
+    "name": "Blank",
+    "width": 1280,
+    "height": 800,
+    "background": "#ffffff",
+    "rootIds": []
+  },
+  "nodes": {},
+  "updatedAt": 0
+}

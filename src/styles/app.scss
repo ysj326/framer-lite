@@ -1,0 +1,21 @@
+@use 'common/variables' as *;
+@use 'structure/layouts';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: $font-base;
+  color: $text-primary;
+  background: $bg-app;
+}

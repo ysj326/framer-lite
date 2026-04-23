@@ -1,0 +1,70 @@
+@use '../common/variables' as *;
+
+// =====================================================================
+// Editor 3-column 그리드
+// =====================================================================
+.editor-layout {
+  display: grid;
+  height: 100vh;
+  grid-template-columns: $layers-panel-width 1fr $properties-panel-width;
+  grid-template-rows: $topbar-height 1fr;
+  grid-template-areas:
+    'topbar topbar topbar'
+    'layers canvas props';
+  background: $bg-app;
+  color: $text-primary;
+}
+
+.editor-layout__topbar {
+  grid-area: topbar;
+  background: $bg-panel;
+  border-bottom: 1px solid $border;
+  display: flex;
+  align-items: center;
+  padding: 0 $space-lg;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.editor-layout__layers {
+  grid-area: layers;
+  background: $bg-panel;
+  border-right: 1px solid $border;
+  overflow-y: auto;
+  padding: $space-md;
+}
+
+.editor-layout__canvas {
+  grid-area: canvas;
+  overflow: hidden; // 내부 .canvas-container가 스크롤/패딩 담당
+  position: relative;
+}
+
+.editor-layout__props {
+  grid-area: props;
+  background: $bg-panel;
+  border-left: 1px solid $border;
+  overflow-y: auto;
+  padding: $space-md;
+}
+
+// =====================================================================
+// 노드 공통 — 선택 표시
+// =====================================================================
+.node--selected {
+  outline: 2px solid $primary;
+  outline-offset: 0;
+}
+
+// =====================================================================
+// 단일 페이지 단순 레이아웃 (Templates/Preview 임시)
+// =====================================================================
+.simple-view {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-md;
+  padding: $space-xl;
+}
