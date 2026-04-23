@@ -69,11 +69,13 @@ gitmoji + 한국어 요약 스타일을 유지한다.
    - ✅ **Do not allow bypassing the above settings**
 4. Create
 
+> ⚠️ 1인 개발 시 "Require approvals"는 활성화하지 않는다. 본인이 직접 approve할 수 없어 모든 PR이 블록된다.
+
 ## 6. 로컬 개발
 
 ```bash
 npm ci              # 의존성 설치
-npm run dev         # dev 서버 (localhost:5173/framer-lite/)
+npm run dev         # dev 서버 http://localhost:5173/framer-lite/ (base 경로 포함, 루트 접속 시 404)
 npm run type-check  # 타입 체크
 npm run test:run    # 테스트 1회 실행
 npm run build       # 프로덕션 빌드
