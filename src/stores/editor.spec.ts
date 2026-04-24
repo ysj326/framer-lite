@@ -495,11 +495,11 @@ describe('createComponent (Frame → Master 변환)', () => {
 
     expect(ok).toBe(true)
     const result = editor.nodes[frame.id]
-    expect(result.type).toBe('instance')
-    expect(result.x).toBe(10)
-    expect(result.y).toBe(20)
-    expect(result.width).toBe(200)
-    expect(result.height).toBe(100)
+    expect(result!.type).toBe('instance')
+    expect(result!.x).toBe(10)
+    expect(result!.y).toBe(20)
+    expect(result!.width).toBe(200)
+    expect(result!.height).toBe(100)
     expect(Object.keys(editor.masters)).toHaveLength(1)
 
     // 자식은 page.nodes에서 제거
@@ -507,8 +507,8 @@ describe('createComponent (Frame → Master 변환)', () => {
 
     // master 안에는 frame + child가 들어 있음
     const master = Object.values(editor.masters)[0]
-    expect(master.rootId).toBe(frame.id)
-    expect(Object.keys(master.nodes).sort()).toEqual([child.id, frame.id].sort())
+    expect(master!.rootId).toBe(frame.id)
+    expect(Object.keys(master!.nodes).sort()).toEqual([child.id, frame.id].sort())
   })
 
   it('Frame이 아닌 노드를 대상으로 호출하면 false 반환, 상태 변경 없음', () => {
@@ -528,10 +528,10 @@ describe('createComponent (Frame → Master 변환)', () => {
     const frame = createFrameNode({ x: 0, y: 0, width: 100, height: 100 })
     editor.addNode(frame, null)
     editor.createComponent(frame.id)
-    expect(editor.nodes[frame.id].type).toBe('instance')
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
 
     editor.undo()
-    expect(editor.nodes[frame.id].type).toBe('frame')
+    expect(editor.nodes[frame.id]!.type).toBe('frame')
     expect(Object.keys(editor.masters)).toHaveLength(0)
   })
 })

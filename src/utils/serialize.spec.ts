@@ -76,7 +76,7 @@ describe('masters 직렬화', () => {
       updatedAt: 3,
     }
     const round = fromJSON(toJSON(project))
-    expect(round?.masters.m1.name).toBe('Card')
+    expect(round?.masters.m1?.name).toBe('Card')
   })
 
   it('masters 필드가 없는 구버전 JSON 로드 시 빈 객체로 주입', () => {
