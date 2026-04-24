@@ -10,12 +10,15 @@ import type { AppNode } from '@/types/node'
  */
 export const nodeBoxStyle = (node: AppNode): CSSProperties => {
   const { style } = node
+  const rotation = node.rotation ?? 0
   return {
     position: 'absolute',
     left: `${node.x}px`,
     top: `${node.y}px`,
     width: `${node.width}px`,
     height: `${node.height}px`,
+    // 0도는 transform을 생략해 CSS 기본값을 유지 (불필요한 composite layer 방지)
+    transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined,
     zIndex: node.zIndex,
     visibility: node.visible ? 'visible' : 'hidden',
     opacity: style.opacity,

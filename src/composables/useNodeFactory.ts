@@ -25,6 +25,8 @@ export interface BaseNodeOptions {
   width?: number
   /** 세로 크기 (px). 미지정 시 타입별 기본값 사용 */
   height?: number
+  /** 회전 각도(도). 기본 0 */
+  rotation?: number
   /** z-order. 기본 0 */
   zIndex?: number
   /** 시각 스타일. 기본 빈 객체 */
@@ -54,6 +56,7 @@ const createBaseFields = (opts: BaseNodeOptions, defaults: TypeDefaults) => ({
   y: opts.y ?? 0,
   width: opts.width ?? defaults.width,
   height: opts.height ?? defaults.height,
+  rotation: opts.rotation ?? 0,
   zIndex: opts.zIndex ?? 0,
   visible: true,
   locked: false,
