@@ -178,7 +178,7 @@ export const useEditorStore = defineStore('editor', () => {
     const frame = nodes.value[frameId]
     if (!frame || frame.type !== 'frame') return false
 
-    history.commit(snapshot(), `createComponent-${frameId}`)
+    history.commit(snapshot())
 
     const master = buildMasterFromFrame(nodes.value, frameId, masters.value)
 
