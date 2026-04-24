@@ -227,6 +227,82 @@ describe('editor store', () => {
     })
   })
 
+  describe('bringToFront / bringToBack', () => {
+    it('bringToFront(root): rootIds 끝으로 이동 (맨 위로)', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      const c = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      store.addNode(c, null)
+      // 초기: [a, b, c]. a를 맨 앞(위)로 올리면 [b, c, a]
+      store.bringToFront(a.id)
+      expect(store.page.rootIds).toEqual([b.id, c.id, a.id])
+    })
+
+    it('bringToBack(root): rootIds 처음으로 이동 (맨 아래)', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      const c = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      store.addNode(c, null)
+      store.bringToBack(c.id)
+      expect(store.page.rootIds).toEqual([c.id, a.id, b.id])
+    })
+
+    it('bringToFront(frame child): 부모 childIds 끝으로 이동', () => {
+      const store = useEditorStore()
+      const frame = createFrameNode()
+      const c1 = createTextNode()
+      const c2 = createTextNode()
+      store.addNode(frame, null)
+      store.addNode(c1, frame.id)
+      store.addNode(c2, frame.id)
+      store.bringToFront(c1.id)
+      expect((store.nodes[frame.id] as FrameNode).childIds).toEqual([
+        c2.id,
+        c1.id,
+      ])
+    })
+
+    it('bringToBack(frame child): 부모 childIds 처음으로 이동', () => {
+      const store = useEditorStore()
+      const frame = createFrameNode()
+      const c1 = createTextNode()
+      const c2 = createTextNode()
+      store.addNode(frame, null)
+      store.addNode(c1, frame.id)
+      store.addNode(c2, frame.id)
+      store.bringToBack(c2.id)
+      expect((store.nodes[frame.id] as FrameNode).childIds).toEqual([
+        c2.id,
+        c1.id,
+      ])
+    })
+
+    it('이미 맨 앞/뒤이면 no-op (history commit도 안 함)', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      const rootBefore = [...store.page.rootIds]
+      store.bringToFront(b.id) // 이미 끝 → no-op
+      expect(store.page.rootIds).toEqual(rootBefore)
+      store.bringToBack(a.id) // 이미 시작 → no-op
+      expect(store.page.rootIds).toEqual(rootBefore)
+    })
+
+    it('존재하지 않는 id는 no-op', () => {
+      const store = useEditorStore()
+      expect(() => store.bringToFront('nope')).not.toThrow()
+      expect(() => store.bringToBack('nope')).not.toThrow()
+    })
+  })
+
   describe('editingId (인플레이스 편집)', () => {
     it('초기값은 null', () => {
       const store = useEditorStore()
