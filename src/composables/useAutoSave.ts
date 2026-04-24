@@ -1,12 +1,14 @@
 import { watch } from 'vue'
 import { debounce } from 'lodash-es'
 import { useEditorStore } from '@/stores/editor'
-import { useSlotsStore } from '@/stores/slots'
+import { useSlotsStore, SLOT_BODY_KEY_PREFIX } from '@/stores/slots'
 import { toJSON, fromJSON } from '@/utils/serialize'
 
-/** 슬롯 본문(Project JSON)을 저장하는 localStorage 키 접두사. `prefix + slotId`가 최종 키 */
-const DEFAULT_KEY_PREFIX = 'framer-lite:slot:'
-/** 단일 슬롯만 있던 구버전의 localStorage 키 — 부팅 시 한 번 마이그레이션된다 */
+/**
+ * 단일 슬롯만 있던 구버전의 localStorage 키 — 부팅 시 한 번 마이그레이션된다.
+ * 본문 키 접두사는 slots store의 `SLOT_BODY_KEY_PREFIX`를 그대로 사용한다
+ * (slots가 removeSlot에서 본문을 연쇄 삭제하므로 접두사는 단일 source-of-truth).
+ */
 const DEFAULT_LEGACY_KEY = 'framer-lite:project'
 /** 기본 debounce(ms) — 사용자가 입력을 잠시 멈추는 시점에 저장 */
 const DEFAULT_DEBOUNCE_MS = 1000
@@ -51,7 +53,7 @@ export interface MigrationResult {
 export const useAutoSave = (options: AutoSaveOptions = {}) => {
   const editor = useEditorStore()
   const slots = useSlotsStore()
-  const keyPrefix = options.keyPrefix ?? DEFAULT_KEY_PREFIX
+  const keyPrefix = options.keyPrefix ?? SLOT_BODY_KEY_PREFIX
   const legacyKey = options.legacyKey ?? DEFAULT_LEGACY_KEY
   const debounceMs = options.debounceMs ?? DEFAULT_DEBOUNCE_MS
 

@@ -68,6 +68,15 @@ describe('slots store', () => {
       s.removeSlot(b.id)
       expect(s.activeId).toBe(a.id)
     })
+
+    it('removeSlot 호출 시 해당 슬롯의 본문 키(SLOT_BODY_KEY_PREFIX+id)도 localStorage에서 삭제', async () => {
+      const { SLOT_BODY_KEY_PREFIX } = await import('./slots')
+      const s = useSlotsStore()
+      const a = s.createSlot('a')
+      localStorage.setItem(SLOT_BODY_KEY_PREFIX + a.id, '{"body":true}')
+      s.removeSlot(a.id)
+      expect(localStorage.getItem(SLOT_BODY_KEY_PREFIX + a.id)).toBeNull()
+    })
   })
 
   describe('selectSlot', () => {

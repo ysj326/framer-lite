@@ -12,6 +12,14 @@ export const MAX_SLOTS = 5
 export const SLOTS_STORAGE_KEY = 'framer-lite:slots'
 
 /**
+ * 개별 슬롯 본문(Project JSON)을 저장하는 localStorage 키 접두사.
+ * 실제 키는 `SLOT_BODY_KEY_PREFIX + slotId`.
+ * slots store가 본문 키의 lifecycle까지 책임지므로(removeSlot에서 연쇄 삭제)
+ * useAutoSave 등 다른 모듈도 반드시 이 상수를 공유해야 일관성이 유지된다.
+ */
+export const SLOT_BODY_KEY_PREFIX = 'framer-lite:slot:'
+
+/**
  * 작업 슬롯 메타데이터.
  * 프로젝트 본문(`Project` JSON)은 별도 키(`framer-lite:slot:{id}`)에 저장되고,
  * 이 store는 "어떤 슬롯들이 있는지 / 지금 어느 슬롯을 보고 있는지"만 관리한다.
@@ -128,13 +136,20 @@ export const useSlotsStore = defineStore('slots', () => {
   }
 
   /**
-   * 슬롯을 목록에서 제거한다. 활성 슬롯을 제거하면 activeId는 null이 된다.
-   * (호출자는 해당 슬롯의 본문 키도 별도로 지워야 한다.)
+   * 슬롯을 목록에서 제거한다.
+   * - 활성 슬롯이면 activeId를 null로 되돌린다.
+   * - 해당 슬롯의 본문 키(`SLOT_BODY_KEY_PREFIX + id`)도 함께 localStorage에서 제거한다
+   *   → 슬롯이 사라졌는데 본문만 남아 용량을 점유하는 고아 상태 방지.
    */
   const removeSlot = (id: string): void => {
     slots.value = slots.value.filter((s) => s.id !== id)
     if (activeId.value === id) {
       activeId.value = null
+    }
+    try {
+      localStorage.removeItem(SLOT_BODY_KEY_PREFIX + id)
+    } catch {
+      /* localStorage 접근 불가 — 무시 */
     }
     persist()
   }

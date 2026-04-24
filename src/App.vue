@@ -4,6 +4,7 @@ import { RouterView } from 'vue-router'
 import { useAutoSave } from '@/composables/useAutoSave'
 import { useSlotsStore } from '@/stores/slots'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import SlotPickerDialog from '@/components/common/SlotPickerDialog.vue'
 
 /**
  * 앱 부팅 시 1회만:
@@ -27,4 +28,5 @@ onMounted(() => {
 <template>
   <RouterView />
   <ConfirmDialog />
+  <SlotPickerDialog />
 </template>
