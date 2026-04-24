@@ -256,6 +256,66 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   /**
+   * 선택된 노드를 같은 부모 안에서 맨 앞(가장 위, 배열 끝)으로 이동한다.
+   * 이미 끝이면 no-op. (배열 순서 = z-order의 진실)
+   * @param id 이동할 노드 id
+   */
+  const bringToFront = (id: string): void => {
+    const node = nodes.value[id]
+    if (!node) return
+    const isRoot = node.parentId === null
+    const siblings = isRoot
+      ? page.value.rootIds
+      : (nodes.value[node.parentId!]?.childIds ?? [])
+    const idx = siblings.indexOf(id)
+    if (idx === -1 || idx === siblings.length - 1) return
+
+    history.commit(snapshot())
+    const next = siblings.filter((sid) => sid !== id)
+    next.push(id)
+    if (isRoot) {
+      page.value = { ...page.value, rootIds: next }
+    } else {
+      const parentId = node.parentId!
+      const parent = nodes.value[parentId]!
+      nodes.value = {
+        ...nodes.value,
+        [parentId]: { ...parent, childIds: next } as AppNode,
+      }
+    }
+  }
+
+  /**
+   * 선택된 노드를 같은 부모 안에서 맨 뒤(가장 아래, 배열 처음)로 이동한다.
+   * 이미 처음이면 no-op.
+   * @param id 이동할 노드 id
+   */
+  const bringToBack = (id: string): void => {
+    const node = nodes.value[id]
+    if (!node) return
+    const isRoot = node.parentId === null
+    const siblings = isRoot
+      ? page.value.rootIds
+      : (nodes.value[node.parentId!]?.childIds ?? [])
+    const idx = siblings.indexOf(id)
+    if (idx === -1 || idx === 0) return
+
+    history.commit(snapshot())
+    const next = siblings.filter((sid) => sid !== id)
+    next.unshift(id)
+    if (isRoot) {
+      page.value = { ...page.value, rootIds: next }
+    } else {
+      const parentId = node.parentId!
+      const parent = nodes.value[parentId]!
+      nodes.value = {
+        ...nodes.value,
+        [parentId]: { ...parent, childIds: next } as AppNode,
+      }
+    }
+  }
+
+  /**
    * 외부 Project 스냅샷을 통째로 로드한다.
    * 기존 상태는 모두 덮어써지고 선택은 해제된다.
    * @param project 로드할 프로젝트
@@ -327,6 +387,8 @@ export const useEditorStore = defineStore('editor', () => {
     moveNode,
     setZIndex,
     reorder,
+    bringToFront,
+    bringToBack,
     loadProject,
     reset,
     undo,
