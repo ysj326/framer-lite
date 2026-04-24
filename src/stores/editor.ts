@@ -69,6 +69,7 @@ export const useEditorStore = defineStore('editor', () => {
   const snapshot = (): EditorSnapshot => ({
     nodes: nodes.value,
     page: page.value,
+    masters: masters.value,
   })
 
   /**
@@ -79,6 +80,7 @@ export const useEditorStore = defineStore('editor', () => {
   const applySnapshot = (snap: EditorSnapshot): void => {
     nodes.value = cloneDeep(snap.nodes)
     page.value = cloneDeep(snap.page)
+    masters.value = cloneDeep(snap.masters ?? {})
     if (selectedId.value !== null && !nodes.value[selectedId.value]) {
       selectedId.value = null
     }
