@@ -5,8 +5,11 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/framer-lite/',
+// base 경로 분기:
+// - dev (npm run dev)            : '/'             → localhost:5173/
+// - build/preview (production)   : '/framer-lite/' → GitHub Pages URL과 일치
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/framer-lite/' : '/',
   plugins: [
     vue(),
     vueDevTools(),
@@ -20,4 +23,4 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
   },
-})
+}))

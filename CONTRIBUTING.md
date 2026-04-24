@@ -75,7 +75,7 @@ gitmoji + 한국어 요약 스타일을 유지한다.
 
 ```bash
 npm ci              # 의존성 설치
-npm run dev         # dev 서버 http://localhost:5173/framer-lite/ (base 경로 포함, 루트 접속 시 404)
+npm run dev         # dev 서버 http://localhost:5173/ (dev는 base '/', 배포는 '/framer-lite/')
 npm run type-check  # 타입 체크
 npm run test:run    # 테스트 1회 실행
 npm run build       # 프로덕션 빌드
