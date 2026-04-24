@@ -8,6 +8,7 @@ import ImageNode from './nodes/ImageNode.vue'
 import ButtonNode from './nodes/ButtonNode.vue'
 import FrameNode from './nodes/FrameNode.vue'
 import ShapeNode from './nodes/ShapeNode.vue'
+import InstanceNode from './nodes/InstanceNode.vue'
 
 defineOptions({ name: 'NodeRenderer' })
 
@@ -30,6 +31,7 @@ const childNodes = computed<AppNode[]>(() =>
   <ImageNode v-else-if="node.type === 'image'" :node="node" />
   <ButtonNode v-else-if="node.type === 'button'" :node="node" />
   <ShapeNode v-else-if="node.type === 'shape'" :node="node" />
+  <InstanceNode v-else-if="node.type === 'instance'" :node="node" />
   <FrameNode v-else-if="node.type === 'frame'" :node="node">
     <NodeRenderer
       v-for="child in childNodes"
