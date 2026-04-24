@@ -14,7 +14,10 @@ interface TemplateOption {
   id: string
   name: string
   description: string
+  /** 카드 상단 색상 블록 */
   accent: string
+  /** accent 위에 올릴 이니셜 글자색 (accent가 어두우면 cream, 밝으면 navy) */
+  letter: string
   data: Project
 }
 
@@ -27,21 +30,24 @@ const templates: TemplateOption[] = [
     id: 'blank',
     name: 'Blank',
     description: '빈 캔버스에서 시작',
-    accent: '#e5e5ea',
+    accent: '#eae2b7', // cream
+    letter: '#003049', // navy on cream
     data: blankTemplate as unknown as Project,
   },
   {
     id: 'landing',
     name: 'Landing',
     description: '헤더 + 히어로 + CTA',
-    accent: '#0066ff',
+    accent: '#f77f00', // orange
+    letter: '#ffffff',
     data: landingTemplate as unknown as Project,
   },
   {
     id: 'portfolio',
     name: 'Portfolio',
     description: '카드 그리드 3개',
-    accent: '#ff3366',
+    accent: '#003049', // navy
+    letter: '#eae2b7', // cream on navy
     data: portfolioTemplate as unknown as Project,
   },
 ]
@@ -172,7 +178,10 @@ const useTemplate = async (template: TemplateOption): Promise<void> => {
         class="template-card"
         @click="useTemplate(t)"
       >
-        <div class="template-card__preview" :style="{ background: t.accent }">
+        <div
+          class="template-card__preview"
+          :style="{ background: t.accent, color: t.letter }"
+        >
           {{ t.name[0] }}
         </div>
         <h3 class="template-card__name">{{ t.name }}</h3>
@@ -255,7 +264,7 @@ const useTemplate = async (template: TemplateOption): Promise<void> => {
   justify-content: center;
   font-size: 48px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.85);
+  // 색상은 인라인 :style 바인딩으로 카드별 letter 색을 지정한다
 }
 
 .template-card__name {

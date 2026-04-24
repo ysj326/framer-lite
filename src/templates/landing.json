@@ -23,7 +23,7 @@
       "zIndex": 0,
       "visible": true,
       "locked": false,
-      "style": { "backgroundColor": "#1d1d1f" },
+      "style": { "backgroundColor": "#003049" },
       "data": {}
     },
     "t-l-logo": {
@@ -55,7 +55,7 @@
       "zIndex": 1,
       "visible": true,
       "locked": false,
-      "style": { "color": "#1d1d1f", "fontSize": 56, "fontWeight": 700 },
+      "style": { "color": "#003049", "fontSize": 56, "fontWeight": 700 },
       "data": { "content": "Build your site in minutes" }
     },
     "t-l-sub": {
@@ -71,7 +71,7 @@
       "zIndex": 2,
       "visible": true,
       "locked": false,
-      "style": { "color": "#86868b", "fontSize": 20 },
+      "style": { "color": "#6b7c8a", "fontSize": 20 },
       "data": { "content": "Drag-and-drop visual editor" }
     },
     "t-l-cta": {
@@ -87,7 +87,7 @@
       "zIndex": 3,
       "visible": true,
       "locked": false,
-      "style": { "backgroundColor": "#0066ff", "color": "#ffffff", "borderRadius": 8, "fontSize": 16, "fontWeight": 600 },
+      "style": { "backgroundColor": "#f77f00", "color": "#ffffff", "borderRadius": 8, "fontSize": 16, "fontWeight": 600 },
       "data": { "label": "Get started", "href": "https://" }
     }
   },

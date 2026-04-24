@@ -84,12 +84,15 @@ const onMoveDown = (): void => editor.reorder(props.node.id, -1)
   user-select: none;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.04);
+    // navy 패널 배경 위에서 살짝 밝은 cream 오버레이
+    background: rgba($brand-cream, 0.06);
   }
 
   &--selected {
-    background: rgba($primary, 0.12);
-    color: $primary;
+    background: rgba($accent, 0.18);
+    color: $accent;
+    border-left: 2px solid $accent;
+    padding-left: 6px; // 좌측 바 두께 보정
   }
 }
 

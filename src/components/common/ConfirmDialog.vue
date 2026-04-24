@@ -130,13 +130,13 @@ onBeforeUnmount(() => {
   }
 
   &--danger {
-    background: #e5484d;
-    border-color: #e5484d;
+    background: $danger;
+    border-color: $danger;
     color: #fff;
 
     &:hover {
-      background: #d13239;
-      border-color: #d13239;
+      background: darken($danger, 6%);
+      border-color: darken($danger, 6%);
     }
   }
 }
