@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid'
 import { cloneDeep } from 'lodash-es'
 import type { AppNode } from '@/types/node'
 import type { Page, Project } from '@/types/project'
+import type { Master } from '@/types/master'
 import * as tree from '@/utils/nodeTree'
 import { useHistoryStore, type EditorSnapshot } from './history'
 import { CURRENT_VERSION } from '@/utils/serialize'
@@ -32,7 +33,7 @@ export const useEditorStore = defineStore('editor', () => {
   const page = ref<Page>(createDefaultPage())
   const selectedId = ref<string | null>(null)
   /** 재사용 컴포넌트 정의 맵. 구버전 JSON 로드 시 빈 객체로 기본값 주입 */
-  const masters = ref<Record<string, import('@/types/master').Master>>({})
+  const masters = ref<Record<string, Master>>({})
 
   /**
    * 현재 인플레이스 편집 중인 노드 id.
@@ -324,6 +325,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const loadProject = (project: Project): void => {
     nodes.value = project.nodes
+    masters.value = project.masters ?? {}
     page.value = project.page
     selectedId.value = null
     editingId.value = null
@@ -335,6 +337,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const reset = (): void => {
     nodes.value = {}
+    masters.value = {}
     page.value = createDefaultPage()
     selectedId.value = null
     editingId.value = null

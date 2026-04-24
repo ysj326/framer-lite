@@ -61,5 +61,10 @@ const isProjectShape = (value: unknown): value is Project => {
  * @returns 현재 스키마에 부합하는 Project
  */
 const migrate = (project: Project): Project => {
-  return { ...project, version: CURRENT_VERSION }
+  const raw = project as unknown as Record<string, unknown>
+  return {
+    ...project,
+    version: CURRENT_VERSION,
+    masters: (raw.masters && typeof raw.masters === 'object') ? project.masters ?? {} : {},
+  }
 }
