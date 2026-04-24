@@ -38,6 +38,11 @@ export interface BaseNode {
   width: number
   /** 세로 크기 (px) */
   height: number
+  /**
+   * 회전 각도 (degree). 0이 기본, 양수는 시계방향.
+   * 구버전 프로젝트 JSON에는 없을 수 있으므로 optional 유지 — 렌더/export 시 0 fallback.
+   */
+  rotation?: number
   /** 같은 부모 안에서의 쌓임 순서 (배열 순서 보조) */
   zIndex: number
   /** 캔버스/미리보기에서 보일지 여부 */

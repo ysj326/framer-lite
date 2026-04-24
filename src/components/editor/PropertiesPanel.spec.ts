@@ -69,4 +69,16 @@ describe('PropertiesPanel', () => {
     await xInput.setValue(99)
     expect(editor.nodes[node.id]!.x).toBe(99)
   })
+
+  it('Rotation 입력으로 node.rotation을 갱신', async () => {
+    const editor = useEditorStore()
+    const node = createTextNode({ rotation: 0 })
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const w = mount(PropertiesPanel)
+    const rotationInput = w.find('input[data-field="rotation"]')
+    expect(rotationInput.exists()).toBe(true)
+    await rotationInput.setValue(45)
+    expect(editor.nodes[node.id]!.rotation).toBe(45)
+  })
 })

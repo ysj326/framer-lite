@@ -38,6 +38,7 @@ const initMoveable = (): void => {
     target: findTargetEl() ?? undefined,
     draggable: true,
     resizable: true,
+    rotatable: true,
     origin: false,
     edge: false,
     keepRatio: false,
@@ -57,6 +58,21 @@ const initMoveable = (): void => {
       x: drag.left,
       y: drag.top,
     })
+  })
+
+  /**
+   * 회전 제스처 시작 시 moveable의 내부 회전 기준을 현재 노드의 rotation으로 맞춘다.
+   * 이렇게 하면 rotate 이벤트의 `beforeRotate`가 누적 각도가 된다.
+   */
+  moveableInstance.on('rotateStart', (e) => {
+    if (!editor.selectedId) return
+    const rot = editor.nodes[editor.selectedId]?.rotation ?? 0
+    e.set(rot)
+  })
+
+  moveableInstance.on('rotate', ({ beforeRotate }) => {
+    if (!editor.selectedId) return
+    editor.updateNode(editor.selectedId, { rotation: beforeRotate })
   })
 }
 
@@ -83,14 +99,14 @@ watch(
 )
 
 /**
- * 노드 자체 좌표/크기 변경 시(예: PropertiesPanel 입력) target rect 동기화.
+ * 노드 자체 좌표/크기/회전 변경 시(예: PropertiesPanel 입력) target rect 동기화.
  */
 watch(
   () => {
     const id = editor.selectedId
     if (!id) return null
     const n = editor.nodes[id]
-    return n ? `${n.x},${n.y},${n.width},${n.height}` : null
+    return n ? `${n.x},${n.y},${n.width},${n.height},${n.rotation ?? 0}` : null
   },
   () => {
     moveableInstance?.updateRect()

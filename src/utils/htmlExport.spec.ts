@@ -163,6 +163,20 @@ describe('exportHtml', () => {
     expect(html).toContain('display: none')
   })
 
+  it('rotation이 0이 아니면 transform: rotate(Xdeg)가 CSS에 포함', () => {
+    const t = text('r', 'spin')
+    t.rotation = 45
+    const html = exportHtml(baseProject([t], ['r']))
+    expect(html).toContain('transform: rotate(45deg)')
+  })
+
+  it('rotation=0 또는 미지정이면 transform 선언 생략', () => {
+    const t = text('r0', 'plain')
+    // rotation 미지정 (legacy)
+    const html = exportHtml(baseProject([t], ['r0']))
+    expect(html).not.toContain('transform:')
+  })
+
   it('NodeStyle(backgroundColor/color/fontSize 등)이 CSS에 매핑된다', () => {
     const t = text('s', 'x')
     t.style = {

@@ -38,6 +38,9 @@ const collectNodeDecls = (node: AppNode): string[] => {
     `height: ${node.height}px`,
     `z-index: ${node.zIndex}`,
   ]
+  // rotation: 0도는 transform 생략해 CSS 부담과 페인트 변동 최소화
+  const rotation = node.rotation ?? 0
+  if (rotation !== 0) out.push(`transform: rotate(${rotation}deg)`)
   if (!node.visible) out.push('display: none')
 
   const s = node.style

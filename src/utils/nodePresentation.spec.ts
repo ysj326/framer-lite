@@ -46,4 +46,29 @@ describe('nodeBoxStyle', () => {
     expect(style.backgroundColor).toBeUndefined()
     expect(style.fontSize).toBeUndefined()
   })
+
+  describe('rotation', () => {
+    it('rotation=0 또는 미지정이면 transform 없음 (CSS 기본 유지)', () => {
+      const node = createShapeNode()
+      expect(nodeBoxStyle(node).transform).toBeUndefined()
+    })
+
+    it('rotation이 양수면 transform: rotate(Xdeg)', () => {
+      const node = createShapeNode()
+      node.rotation = 45
+      expect(nodeBoxStyle(node).transform).toBe('rotate(45deg)')
+    })
+
+    it('rotation이 음수도 정상 반영', () => {
+      const node = createShapeNode()
+      node.rotation = -30
+      expect(nodeBoxStyle(node).transform).toBe('rotate(-30deg)')
+    })
+
+    it('rotation이 소수점도 정상 반영', () => {
+      const node = createShapeNode()
+      node.rotation = 12.5
+      expect(nodeBoxStyle(node).transform).toBe('rotate(12.5deg)')
+    })
+  })
 })

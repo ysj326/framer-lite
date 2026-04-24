@@ -9,6 +9,11 @@ const x = useNodeField(get, (n) => n.x, (v) => ({ x: Number(v) || 0 }))
 const y = useNodeField(get, (n) => n.y, (v) => ({ y: Number(v) || 0 }))
 const width = useNodeField(get, (n) => n.width, (v) => ({ width: Number(v) || 0 }))
 const height = useNodeField(get, (n) => n.height, (v) => ({ height: Number(v) || 0 }))
+const rotation = useNodeField(
+  get,
+  (n) => n.rotation ?? 0,
+  (v) => ({ rotation: Number(v) || 0 }),
+)
 const zIndex = useNodeField(get, (n) => n.zIndex, (v) => ({ zIndex: Number(v) || 0 }))
 const visible = useNodeField(get, (n) => n.visible, (v) => ({ visible: !!v }))
 
@@ -36,7 +41,18 @@ const opacity = useNodeField(
       <label>H<input v-model.number="height" type="number" /></label>
     </div>
     <div class="prop-row">
+      <label>
+        Rotate°
+        <input
+          v-model.number="rotation"
+          type="number"
+          step="1"
+          data-field="rotation"
+        />
+      </label>
       <label>Z<input v-model.number="zIndex" type="number" /></label>
+    </div>
+    <div class="prop-row">
       <label class="prop-row__check">
         <input v-model="visible" type="checkbox" />
         Visible
