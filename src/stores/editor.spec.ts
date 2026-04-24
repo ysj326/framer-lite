@@ -227,6 +227,74 @@ describe('editor store', () => {
     })
   })
 
+  describe('editingId (인플레이스 편집)', () => {
+    it('초기값은 null', () => {
+      const store = useEditorStore()
+      expect(store.editingId).toBe(null)
+    })
+
+    it('startEdit(id)은 존재하는 노드일 때만 editingId 세팅', () => {
+      const store = useEditorStore()
+      const node = createTextNode()
+      store.addNode(node, null)
+      store.startEdit(node.id)
+      expect(store.editingId).toBe(node.id)
+    })
+
+    it('startEdit(id) — 존재하지 않는 id면 no-op', () => {
+      const store = useEditorStore()
+      store.startEdit('nope')
+      expect(store.editingId).toBe(null)
+    })
+
+    it('startEdit(id) — locked 노드면 진입 금지', () => {
+      const store = useEditorStore()
+      const node = createTextNode()
+      store.addNode(node, null)
+      store.updateNode(node.id, { locked: true })
+      store.startEdit(node.id)
+      expect(store.editingId).toBe(null)
+    })
+
+    it('endEdit은 editingId를 null로', () => {
+      const store = useEditorStore()
+      const node = createTextNode()
+      store.addNode(node, null)
+      store.startEdit(node.id)
+      store.endEdit()
+      expect(store.editingId).toBe(null)
+    })
+
+    it('select(다른 id) 호출 시 진행중인 편집은 종료', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      store.startEdit(a.id)
+      store.select(b.id)
+      expect(store.editingId).toBe(null)
+    })
+
+    it('편집 중인 노드를 deleteNode하면 editingId도 해제', () => {
+      const store = useEditorStore()
+      const node = createTextNode()
+      store.addNode(node, null)
+      store.startEdit(node.id)
+      store.deleteNode(node.id)
+      expect(store.editingId).toBe(null)
+    })
+
+    it('reset / loadProject 후 editingId=null', () => {
+      const store = useEditorStore()
+      const node = createTextNode()
+      store.addNode(node, null)
+      store.startEdit(node.id)
+      store.reset()
+      expect(store.editingId).toBe(null)
+    })
+  })
+
   describe('loadProject', () => {
     it('외부 Project를 통째로 로드한다', () => {
       const store = useEditorStore()
