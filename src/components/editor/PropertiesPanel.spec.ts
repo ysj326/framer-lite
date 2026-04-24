@@ -81,4 +81,33 @@ describe('PropertiesPanel', () => {
     await rotationInput.setValue(45)
     expect(editor.nodes[node.id]!.rotation).toBe(45)
   })
+
+  it('Frame 선택 시 "Create Component" 버튼이 노출된다', () => {
+    const editor = useEditorStore()
+    const node = createFrameNode()
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const w = mount(PropertiesPanel)
+    expect(w.text()).toContain('Create Component')
+  })
+
+  it('Text 등 frame이 아닌 노드 선택 시 버튼은 숨겨진다', () => {
+    const editor = useEditorStore()
+    const node = createTextNode({ name: 'Hello' })
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const w = mount(PropertiesPanel)
+    expect(w.text()).not.toContain('Create Component')
+  })
+
+  it('버튼 클릭 시 editor.createComponent가 호출되고 선택된 노드가 Instance로 치환된다', async () => {
+    const editor = useEditorStore()
+    const node = createFrameNode()
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const frameId = node.id
+    const w = mount(PropertiesPanel)
+    await w.get('button.create-component').trigger('click')
+    expect(editor.nodes[frameId]!.type).toBe('instance')
+  })
 })
