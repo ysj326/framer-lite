@@ -68,3 +68,52 @@
   gap: $space-md;
   padding: $space-xl;
 }
+
+// =====================================================================
+// Form controls — navy 패널 위에서 일관된 기본 스타일
+// 각 properties 컴포넌트에서 override 가능하지만 기본은 여기서 지정한다.
+// =====================================================================
+input[type='number'],
+input[type='text'],
+input[type='url'],
+input[type='email'],
+input[type='password'],
+textarea,
+select {
+  background: rgba($brand-cream, 0.04);
+  color: $text-primary;
+  border: 1px solid $border;
+  border-radius: 3px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.12s, background 0.12s;
+
+  &::placeholder {
+    color: $text-muted;
+  }
+
+  &:focus {
+    border-color: $primary;
+    background: rgba($brand-cream, 0.08);
+  }
+}
+
+// color picker는 브라우저 기본 UI 유지 (배경이 색 미리보기라 변경 금지)
+input[type='color'] {
+  background: transparent;
+  border: 1px solid $border;
+  border-radius: 3px;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $primary;
+  }
+}
+
+input[type='checkbox'] {
+  accent-color: $primary;
+}
+
+input[type='range'] {
+  accent-color: $primary;
+}

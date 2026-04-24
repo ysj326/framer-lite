@@ -60,11 +60,9 @@ const borderRadius = useNodeField(
 
   input,
   select {
-    border: 1px solid $border;
-    border-radius: 3px;
     padding: 4px 6px;
     font-size: 12px;
-    background: white;
+    // 배경/색/테두리는 structure/_layouts.scss 공통 style에서 처리
   }
 }
 </style>

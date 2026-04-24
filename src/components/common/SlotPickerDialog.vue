@@ -240,9 +240,9 @@ onBeforeUnmount(() => {
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 
   &:hover {
-    background: rgba(#e5484d, 0.1);
-    border-color: #e5484d;
-    color: #e5484d;
+    background: rgba($danger, 0.1);
+    border-color: $danger;
+    color: $danger;
   }
 }
 </style>
