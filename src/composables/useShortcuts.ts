@@ -33,6 +33,7 @@ const NUDGE_STEP_LARGE = 10
  * - Cmd/Ctrl + [               : 선택 노드 한 단계 아래로 (z-1)
  * - Cmd/Ctrl + Shift + ]       : 선택 노드 맨 위로 (bringToFront)
  * - Cmd/Ctrl + Shift + [       : 선택 노드 맨 아래로 (bringToBack)
+ * - Cmd/Ctrl + Alt + K         : 선택 Frame을 Component로 변환
  *
  * `Cmd`(metaKey)와 `Ctrl`(ctrlKey) 모두 허용해 macOS/Windows 양쪽에서 동일하게 동작한다.
  * 입력 요소(input/textarea/contentEditable) 포커스 중에는 모든 단축키 무시.
@@ -89,6 +90,17 @@ export const useShortcuts = (): void => {
         if (event.shiftKey) editor.bringToBack(editor.selectedId)
         else editor.reorder(editor.selectedId, -1)
       }
+      return
+    }
+
+    // Cmd/Ctrl + Alt + K : Frame을 Component로 변환
+    if (cmd && event.altKey && key === 'k') {
+      event.preventDefault()
+      const id = editor.selectedId
+      if (!id) return
+      const node = editor.nodes[id]
+      if (!node || node.type !== 'frame') return
+      editor.createComponent(id)
       return
     }
 

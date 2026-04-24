@@ -18,6 +18,7 @@ const emptyPage = (): Page => ({
 const snap = (rootIds: string[] = []): EditorSnapshot => ({
   nodes: {},
   page: { ...emptyPage(), rootIds },
+  masters: {},
 })
 
 describe('history store', () => {
@@ -160,5 +161,28 @@ describe('history store', () => {
       expect(h.canUndo).toBe(false)
       expect(h.canRedo).toBe(false)
     })
+  })
+})
+
+describe('history snapshot with masters', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('commit → undo → 스냅샷의 masters 필드가 보존됨', () => {
+    const history = useHistoryStore()
+    const empty: EditorSnapshot = {
+      nodes: {},
+      page: { id: 'p', name: 'P', width: 100, height: 100, background: '#fff', rootIds: [] },
+      masters: {},
+    }
+    const withMaster: EditorSnapshot = {
+      nodes: {},
+      page: empty.page,
+      masters: {
+        m1: { id: 'm1', name: 'Card', rootId: 'r', nodes: {}, createdAt: 0, updatedAt: 0 },
+      },
+    }
+    history.commit(empty) // past: [empty]
+    const prev = history.undo(withMaster)
+    expect(prev?.masters).toEqual({})
   })
 })

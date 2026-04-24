@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { effectScope, type EffectScope } from 'vue'
 import { useShortcuts } from './useShortcuts'
 import { useEditorStore } from '@/stores/editor'
-import { createTextNode } from './useNodeFactory'
+import { createTextNode, createFrameNode } from './useNodeFactory'
 
 describe('useShortcuts', () => {
   let scope: EffectScope
@@ -224,5 +224,27 @@ describe('useShortcuts', () => {
       )
       expect(editor.page.rootIds).toEqual(before)
     })
+  })
+
+  it('Cmd+Alt+K: Frame이 선택돼 있으면 createComponent를 호출한다', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode()
+    editor.addNode(frame, null)
+    editor.select(frame.id)
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', metaKey: true, altKey: true }),
+    )
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
+  })
+
+  it('Cmd+Alt+K: Frame이 아닌 선택이면 no-op', () => {
+    const editor = useEditorStore()
+    const text = createTextNode()
+    editor.addNode(text, null)
+    editor.select(text.id)
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', metaKey: true, altKey: true }),
+    )
+    expect(editor.nodes[text.id]!.type).toBe('text')
   })
 })

@@ -387,6 +387,7 @@ describe('editor store', () => {
           rootIds: [node.id],
         },
         nodes: { [node.id]: node },
+        masters: {},
         updatedAt: 0,
       })
       expect(store.page.name).toBe('Page')
@@ -476,5 +477,61 @@ describe('editor store', () => {
       store.redo()
       expect(store.nodes).toEqual({})
     })
+  })
+})
+
+describe('createComponent (Frame → Master 변환)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('Frame을 선택 후 createComponent 호출하면 같은 자리에 Instance가 생기고 masters에 등록된다', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode({ x: 10, y: 20, width: 200, height: 100 })
+    editor.addNode(frame, null)
+    const child = createTextNode({ x: 5, y: 5, width: 50, height: 20 })
+    editor.addNode(child, frame.id)
+    editor.select(frame.id)
+
+    const ok = editor.createComponent(frame.id)
+
+    expect(ok).toBe(true)
+    const result = editor.nodes[frame.id]
+    expect(result!.type).toBe('instance')
+    expect(result!.x).toBe(10)
+    expect(result!.y).toBe(20)
+    expect(result!.width).toBe(200)
+    expect(result!.height).toBe(100)
+    expect(Object.keys(editor.masters)).toHaveLength(1)
+
+    // 자식은 page.nodes에서 제거
+    expect(editor.nodes[child.id]).toBeUndefined()
+
+    // master 안에는 frame + child가 들어 있음
+    const master = Object.values(editor.masters)[0]
+    expect(master!.rootId).toBe(frame.id)
+    expect(Object.keys(master!.nodes).sort()).toEqual([child.id, frame.id].sort())
+  })
+
+  it('Frame이 아닌 노드를 대상으로 호출하면 false 반환, 상태 변경 없음', () => {
+    const editor = useEditorStore()
+    const text = createTextNode({ x: 0, y: 0, width: 50, height: 20 })
+    editor.addNode(text, null)
+    const before = JSON.stringify({ nodes: editor.nodes, masters: editor.masters })
+
+    const ok = editor.createComponent(text.id)
+    expect(ok).toBe(false)
+    const after = JSON.stringify({ nodes: editor.nodes, masters: editor.masters })
+    expect(after).toBe(before)
+  })
+
+  it('변환은 하나의 undo 단위 — undo 후 Frame이 복원된다', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode({ x: 0, y: 0, width: 100, height: 100 })
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
+
+    editor.undo()
+    expect(editor.nodes[frame.id]!.type).toBe('frame')
+    expect(Object.keys(editor.masters)).toHaveLength(0)
   })
 })

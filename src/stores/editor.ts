@@ -2,11 +2,13 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { nanoid } from 'nanoid'
 import { cloneDeep } from 'lodash-es'
-import type { AppNode } from '@/types/node'
+import type { AppNode, InstanceNode } from '@/types/node'
 import type { Page, Project } from '@/types/project'
+import type { Master } from '@/types/master'
 import * as tree from '@/utils/nodeTree'
 import { useHistoryStore, type EditorSnapshot } from './history'
 import { CURRENT_VERSION } from '@/utils/serialize'
+import { buildMasterFromFrame } from '@/utils/masterFactory'
 
 /**
  * 빈 프로젝트의 기본 페이지를 만든다.
@@ -31,6 +33,8 @@ export const useEditorStore = defineStore('editor', () => {
   const nodes = ref<Record<string, AppNode>>({})
   const page = ref<Page>(createDefaultPage())
   const selectedId = ref<string | null>(null)
+  /** 재사용 컴포넌트 정의 맵. 구버전 JSON 로드 시 빈 객체로 기본값 주입 */
+  const masters = ref<Record<string, Master>>({})
 
   /**
    * 현재 인플레이스 편집 중인 노드 id.
@@ -66,6 +70,7 @@ export const useEditorStore = defineStore('editor', () => {
   const snapshot = (): EditorSnapshot => ({
     nodes: nodes.value,
     page: page.value,
+    masters: masters.value,
   })
 
   /**
@@ -76,6 +81,7 @@ export const useEditorStore = defineStore('editor', () => {
   const applySnapshot = (snap: EditorSnapshot): void => {
     nodes.value = cloneDeep(snap.nodes)
     page.value = cloneDeep(snap.page)
+    masters.value = cloneDeep(snap.masters ?? {})
     if (selectedId.value !== null && !nodes.value[selectedId.value]) {
       selectedId.value = null
     }
@@ -157,6 +163,54 @@ export const useEditorStore = defineStore('editor', () => {
     if (editingId.value !== null && !nodes.value[editingId.value]) {
       editingId.value = null
     }
+  }
+
+  /**
+   * 선택된 Frame 노드를 Master로 등록하고, 그 자리를 Instance 노드로 치환한다.
+   * frameId가 존재하지 않거나 type이 'frame'이 아니면 no-op, false 반환.
+   * 성공 시 history에 직전 상태가 commit돼 단일 undo 단위를 이룬다.
+   * master.rootId는 원본 frameId를 그대로 사용하며(별도 namespace), Instance도
+   * 원본 frameId를 재사용해 삽입된다 — undo 시 같은 id로 복원되어 UX 일관.
+   * @param frameId 대상 Frame 노드 id
+   * @returns 변환 성공 여부
+   */
+  const createComponent = (frameId: string): boolean => {
+    const frame = nodes.value[frameId]
+    if (!frame || frame.type !== 'frame') return false
+
+    history.commit(snapshot())
+
+    const master = buildMasterFromFrame(nodes.value, frameId, masters.value)
+
+    // subtree(프레임 + 자손)를 page.nodes에서 제거
+    const toRemove = Object.keys(master.nodes)
+    const nextNodes: Record<string, AppNode> = { ...nodes.value }
+    for (const id of toRemove) delete nextNodes[id]
+
+    // 원본 Frame 위치에 Instance를 삽입 (같은 id 재사용)
+    const instance: InstanceNode = {
+      id: frameId,
+      type: 'instance',
+      name: master.name,
+      parentId: frame.parentId,
+      childIds: [],
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
+      rotation: frame.rotation ?? 0,
+      zIndex: frame.zIndex,
+      visible: frame.visible,
+      locked: frame.locked,
+      style: {},
+      data: { masterId: master.id, overrides: {} },
+    }
+    nextNodes[frameId] = instance
+
+    nodes.value = nextNodes
+    masters.value = { ...masters.value, [master.id]: master }
+
+    return true
   }
 
   /**
@@ -322,6 +376,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const loadProject = (project: Project): void => {
     nodes.value = project.nodes
+    masters.value = project.masters ?? {}
     page.value = project.page
     selectedId.value = null
     editingId.value = null
@@ -333,6 +388,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const reset = (): void => {
     nodes.value = {}
+    masters.value = {}
     page.value = createDefaultPage()
     selectedId.value = null
     editingId.value = null
@@ -349,6 +405,7 @@ export const useEditorStore = defineStore('editor', () => {
     name: page.value.name,
     page: page.value,
     nodes: nodes.value,
+    masters: masters.value,
     updatedAt: Date.now(),
   })
 
@@ -373,6 +430,7 @@ export const useEditorStore = defineStore('editor', () => {
     page,
     selectedId,
     editingId,
+    masters,
     selectedNode,
     rootNodes,
     canUndo,
@@ -383,6 +441,7 @@ export const useEditorStore = defineStore('editor', () => {
     addNode,
     updateNode,
     deleteNode,
+    createComponent,
     duplicateNode,
     moveNode,
     setZIndex,

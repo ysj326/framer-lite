@@ -7,6 +7,16 @@ import ButtonProperties from './properties/ButtonProperties.vue'
 import ShapeProperties from './properties/ShapeProperties.vue'
 
 const editor = useEditorStore()
+
+/**
+ * 현재 선택된 Frame을 컴포넌트 마스터로 등록하고 그 자리를 Instance로 치환한다.
+ * editor.createComponent가 성공하면 같은 id가 Instance가 되어 선택 상태도 그대로 유지된다.
+ */
+const onCreateComponent = (): void => {
+  if (!editor.selectedNode) return
+  if (editor.selectedNode.type !== 'frame') return
+  editor.createComponent(editor.selectedNode.id)
+}
 </script>
 
 <template>
@@ -20,6 +30,14 @@ const editor = useEditorStore()
         <span class="properties-panel__type">{{ editor.selectedNode.type }}</span>
         <span class="properties-panel__node-name">{{ editor.selectedNode.name }}</span>
       </div>
+      <button
+        v-if="editor.selectedNode.type === 'frame'"
+        type="button"
+        class="create-component"
+        @click="onCreateComponent"
+      >
+        Create Component
+      </button>
       <CommonProperties :node="editor.selectedNode" />
       <TextProperties v-if="editor.selectedNode.type === 'text'" :node="editor.selectedNode" />
       <ImageProperties v-else-if="editor.selectedNode.type === 'image'" :node="editor.selectedNode" />
@@ -65,5 +83,18 @@ const editor = useEditorStore()
 .properties-panel__node-name {
   font-size: 13px;
   font-weight: 600;
+}
+
+.create-component {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: $space-sm;
+  border: 1px solid $accent;
+  background: transparent;
+  color: $accent;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  &:hover { background: rgba($accent, 0.12); }
 }
 </style>
