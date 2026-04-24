@@ -15,9 +15,11 @@ let moveableInstance: Moveable | null = null
 
 /**
  * 현재 selectedId에 해당하는 노드 DOM을 container 안에서 찾는다.
+ * 인플레이스 편집 중(`editingId`)에는 핸들을 숨겨 텍스트 선택/편집을 방해하지 않는다.
  * @returns 노드 DOM 또는 null
  */
 const findTargetEl = (): HTMLElement | null => {
+  if (editor.editingId !== null) return null
   if (!editor.selectedId || !props.container) return null
   return props.container.querySelector<HTMLElement>(
     `[data-node-id="${editor.selectedId}"]`,
@@ -66,11 +68,12 @@ watch(
 )
 
 /**
- * 선택 변경 시 target 갱신.
+ * 선택 변경 또는 편집 상태 변경 시 target 갱신.
  * v-if 등으로 DOM이 바뀐 직후일 수 있어 nextTick 후 갱신.
+ * editing 진입 시 target=null로 핸들이 사라지고, 종료 시 다시 붙는다.
  */
 watch(
-  () => editor.selectedId,
+  () => [editor.selectedId, editor.editingId] as const,
   async () => {
     await nextTick()
     if (!moveableInstance) return

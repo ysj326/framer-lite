@@ -32,6 +32,14 @@ export const useEditorStore = defineStore('editor', () => {
   const page = ref<Page>(createDefaultPage())
   const selectedId = ref<string | null>(null)
 
+  /**
+   * 현재 인플레이스 편집 중인 노드 id.
+   * 편집 중에는 MoveableWrapper 선택 핸들을 숨기고, 단축키(Delete/Backspace 등)도
+   * `isEditableTarget` 검사에 의해 무시되어야 한다.
+   * 한 번에 한 노드만 편집 가능.
+   */
+  const editingId = ref<string | null>(null)
+
   const history = useHistoryStore()
 
   /** 현재 선택된 노드 (없으면 null) */
@@ -74,11 +82,37 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   /**
-   * 선택 상태를 바꾼다.
+   * 선택 상태를 바꾼다. 편집 중인 노드가 있으면 같이 종료한다
+   * (다른 노드를 선택했거나 선택을 해제한 경우).
    * @param id 선택할 노드 id 또는 null(해제)
    */
   const select = (id: string | null): void => {
+    if (editingId.value !== null && editingId.value !== id) {
+      editingId.value = null
+    }
     selectedId.value = id
+  }
+
+  /**
+   * 지정한 노드를 인플레이스 편집 모드로 전환한다.
+   * - 존재하지 않는 노드이거나 locked된 노드는 진입하지 않는다(no-op).
+   * - 편집 모드에서는 선택도 같이 맞춰준다(UX 일관성).
+   *
+   * @param id 편집할 노드 id
+   */
+  const startEdit = (id: string): void => {
+    const node = nodes.value[id]
+    if (!node) return
+    if (node.locked) return
+    selectedId.value = id
+    editingId.value = id
+  }
+
+  /**
+   * 인플레이스 편집을 종료한다.
+   */
+  const endEdit = (): void => {
+    editingId.value = null
   }
 
   /**
@@ -119,6 +153,9 @@ export const useEditorStore = defineStore('editor', () => {
     page.value = { ...page.value, rootIds: next.rootIds }
     if (selectedId.value !== null && !nodes.value[selectedId.value]) {
       selectedId.value = null
+    }
+    if (editingId.value !== null && !nodes.value[editingId.value]) {
+      editingId.value = null
     }
   }
 
@@ -227,6 +264,7 @@ export const useEditorStore = defineStore('editor', () => {
     nodes.value = project.nodes
     page.value = project.page
     selectedId.value = null
+    editingId.value = null
     history.clear()
   }
 
@@ -237,6 +275,7 @@ export const useEditorStore = defineStore('editor', () => {
     nodes.value = {}
     page.value = createDefaultPage()
     selectedId.value = null
+    editingId.value = null
     history.clear()
   }
 
@@ -273,11 +312,14 @@ export const useEditorStore = defineStore('editor', () => {
     nodes,
     page,
     selectedId,
+    editingId,
     selectedNode,
     rootNodes,
     canUndo,
     canRedo,
     select,
+    startEdit,
+    endEdit,
     addNode,
     updateNode,
     deleteNode,
