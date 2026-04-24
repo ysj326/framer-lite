@@ -297,6 +297,129 @@ describe('HTML export with instances', () => {
     expect(html).toContain('left: 50px')
   })
 
+  it('Instance 내부 노드의 CSS 규칙이 <style> 블록에 포함된다', () => {
+    // m1 master 안의 text 노드 't'의 .node-t { ... } 가 <style>에 있어야 함
+    const inst: AppNode = {
+      id: 'inst1',
+      type: 'instance',
+      name: 'Card',
+      parentId: null,
+      childIds: [],
+      x: 50,
+      y: 60,
+      width: 200,
+      height: 100,
+      rotation: 0,
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      style: {},
+      data: { masterId: 'm1', overrides: {} },
+    }
+
+    const masters: Record<string, Master> = {
+      m1: {
+        id: 'm1',
+        name: 'Card',
+        rootId: 'r',
+        createdAt: 0,
+        updatedAt: 0,
+        nodes: {
+          r: {
+            id: 'r',
+            type: 'frame',
+            name: 'root',
+            parentId: null,
+            childIds: ['t'],
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 100,
+            rotation: 0,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            style: {},
+            data: {},
+          },
+          t: {
+            id: 't',
+            type: 'text',
+            name: 'label',
+            parentId: 'r',
+            childIds: [],
+            x: 10,
+            y: 10,
+            width: 120,
+            height: 20,
+            rotation: 0,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            style: {},
+            data: { content: 'Hello' },
+          },
+        },
+      },
+    }
+
+    const html = exportHtml(makeInstanceProject(inst, masters))
+    expect(html).toContain('.node-t {')
+  })
+
+  it('master rootFrame의 backgroundColor가 wrapper에 반영된다', () => {
+    const inst: AppNode = {
+      id: 'inst2',
+      type: 'instance',
+      name: 'Card',
+      parentId: null,
+      childIds: [],
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 100,
+      rotation: 0,
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      style: {},
+      data: { masterId: 'm2', overrides: {} },
+    }
+
+    const masters: Record<string, Master> = {
+      m2: {
+        id: 'm2',
+        name: 'RedCard',
+        rootId: 'rf',
+        createdAt: 0,
+        updatedAt: 0,
+        nodes: {
+          rf: {
+            id: 'rf',
+            type: 'frame',
+            name: 'root',
+            parentId: null,
+            childIds: [],
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 100,
+            rotation: 0,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            style: { backgroundColor: 'red' },
+            data: {},
+          },
+        },
+      },
+    }
+
+    const html = exportHtml(makeInstanceProject(inst, masters))
+    // wrapper div의 인라인 style에 background-color: red 가 있어야 함
+    expect(html).toMatch(/background-color:\s*red/)
+  })
+
   it('master가 없는 Instance는 주석 fallback 포함', () => {
     const inst: AppNode = {
       id: 'x',

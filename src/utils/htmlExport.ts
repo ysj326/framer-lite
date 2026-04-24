@@ -114,9 +114,19 @@ const buildNodeHtml = (
       // master 정의 없음 → 주석 fallback
       return `<!-- missing master: ${node.data.masterId} --><div class="${cls}"></div>`
     }
-    // Instance 자신의 좌표/크기를 wrapper 스타일로 사용 (정책 B: master rootFrame 좌표 무시)
-    const wrapperDecls = collectNodeDecls(node).join('; ')
+    // master rootFrame의 시각 속성을 먼저 적용하고, instance 자신의 position/size/rotation으로 덮어씀
     const rootNode = master.nodes[master.rootId]
+    const rootStyleDecls: string[] = []
+    if (rootNode && rootNode.type === 'frame') {
+      const s = rootNode.style
+      if (s.opacity !== undefined) rootStyleDecls.push(`opacity: ${s.opacity}`)
+      if (s.backgroundColor) rootStyleDecls.push(`background-color: ${s.backgroundColor}`)
+      if (s.color) rootStyleDecls.push(`color: ${s.color}`)
+      if (s.fontSize !== undefined) rootStyleDecls.push(`font-size: ${s.fontSize}px`)
+      if (s.fontWeight !== undefined) rootStyleDecls.push(`font-weight: ${s.fontWeight}`)
+      if (s.borderRadius !== undefined) rootStyleDecls.push(`border-radius: ${s.borderRadius}px`)
+    }
+    const wrapperDecls = [...rootStyleDecls, ...collectNodeDecls(node)].join('; ')
     const inner = rootNode
       ? rootNode.childIds
           .map((cid) => master.nodes[cid])
@@ -142,8 +152,12 @@ const buildNodeHtml = (
  * @returns 완전한 HTML 문서 문자열
  */
 export const exportHtml = (project: Project): string => {
-  const allNodes = Object.values(project.nodes)
-  const cssRules = allNodes.map(buildNodeCss).join('\n  ')
+  // project.nodes와 모든 masters의 nodes를 합산, id 중복 시 나중 항목이 이기나 동일 id → 동일 rule이므로 무해
+  const allNodesMap = new Map<string, AppNode>([
+    ...Object.entries(project.nodes),
+    ...Object.values(project.masters).flatMap((m) => Object.entries(m.nodes)),
+  ])
+  const cssRules = [...allNodesMap.values()].map(buildNodeCss).join('\n  ')
 
   const rootMarkup = project.page.rootIds
     .map((id) => project.nodes[id])
