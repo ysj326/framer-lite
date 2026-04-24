@@ -31,6 +31,8 @@ export const useEditorStore = defineStore('editor', () => {
   const nodes = ref<Record<string, AppNode>>({})
   const page = ref<Page>(createDefaultPage())
   const selectedId = ref<string | null>(null)
+  /** 재사용 컴포넌트 정의 맵. 구버전 JSON 로드 시 빈 객체로 기본값 주입 */
+  const masters = ref<Record<string, import('@/types/master').Master>>({})
 
   /**
    * 현재 인플레이스 편집 중인 노드 id.
@@ -349,6 +351,7 @@ export const useEditorStore = defineStore('editor', () => {
     name: page.value.name,
     page: page.value,
     nodes: nodes.value,
+    masters: masters.value,
     updatedAt: Date.now(),
   })
 
@@ -373,6 +376,7 @@ export const useEditorStore = defineStore('editor', () => {
     page,
     selectedId,
     editingId,
+    masters,
     selectedNode,
     rootNodes,
     canUndo,

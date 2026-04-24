@@ -387,6 +387,7 @@ describe('editor store', () => {
           rootIds: [node.id],
         },
         nodes: { [node.id]: node },
+        masters: {},
         updatedAt: 0,
       })
       expect(store.page.name).toBe('Page')

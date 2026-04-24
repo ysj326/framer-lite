@@ -40,6 +40,7 @@ const makeProject = (name = 'Page'): Project => ({
     rootIds: [],
   },
   nodes: {},
+  masters: {},
   updatedAt: 0,
 })
 

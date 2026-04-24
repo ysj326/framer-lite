@@ -15,6 +15,7 @@ const baseProject = (nodes: AppNode[], rootIds: string[]): Project => ({
     rootIds,
   },
   nodes: Object.fromEntries(nodes.map((n) => [n.id, n])),
+  masters: {},
   updatedAt: 0,
 })
 

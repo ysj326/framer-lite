@@ -17,6 +17,7 @@ const sample = (): Project => {
       rootIds: [node.id],
     },
     nodes: { [node.id]: node },
+    masters: {},
     updatedAt: 1700000000000,
   }
 }
