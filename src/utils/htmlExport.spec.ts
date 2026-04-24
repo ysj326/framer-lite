@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { exportHtml } from './htmlExport'
 import type { Project } from '@/types/project'
 import type { AppNode } from '@/types/node'
+import type { Master } from '@/types/master'
 
 const baseProject = (nodes: AppNode[], rootIds: string[]): Project => ({
   version: 1,
@@ -195,5 +196,127 @@ describe('exportHtml', () => {
     expect(html).toContain('font-weight: 700')
     expect(html).toContain('border-radius: 8px')
     expect(html).toContain('opacity: 0.5')
+  })
+})
+
+/** Instance HTML export 테스트 */
+describe('HTML export with instances', () => {
+  /**
+   * master 노드 맵을 가진 Project fixture 생성 헬퍼.
+   * @param instanceNode 페이지 루트에 배치할 Instance 노드
+   * @param masters master 맵
+   */
+  const makeInstanceProject = (
+    instanceNode: AppNode,
+    masters: Record<string, Master>,
+  ): Project => ({
+    version: 1,
+    name: 'P',
+    page: {
+      id: 'p',
+      name: 'P',
+      width: 1280,
+      height: 800,
+      background: '#fff',
+      rootIds: [instanceNode.id],
+    },
+    nodes: { [instanceNode.id]: instanceNode },
+    masters,
+    updatedAt: 0,
+  })
+
+  it('Instance 자리에 master 트리가 인라인 전개되어 출력된다', () => {
+    const inst: AppNode = {
+      id: 'inst1',
+      type: 'instance',
+      name: 'Card',
+      parentId: null,
+      childIds: [],
+      x: 50,
+      y: 60,
+      width: 200,
+      height: 100,
+      rotation: 0,
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      style: {},
+      data: { masterId: 'm1', overrides: {} },
+    }
+
+    const masters: Record<string, Master> = {
+      m1: {
+        id: 'm1',
+        name: 'Card',
+        rootId: 'r',
+        createdAt: 0,
+        updatedAt: 0,
+        nodes: {
+          r: {
+            id: 'r',
+            type: 'frame',
+            name: 'root',
+            parentId: null,
+            childIds: ['t'],
+            x: 0,
+            y: 0,
+            width: 200,
+            height: 100,
+            rotation: 0,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            style: {},
+            data: {},
+          },
+          t: {
+            id: 't',
+            type: 'text',
+            name: 'label',
+            parentId: 'r',
+            childIds: [],
+            x: 10,
+            y: 10,
+            width: 120,
+            height: 20,
+            rotation: 0,
+            zIndex: 0,
+            visible: true,
+            locked: false,
+            style: {},
+            data: { content: 'Hello' },
+          },
+        },
+      },
+    }
+
+    const html = exportHtml(makeInstanceProject(inst, masters))
+    // master 내부 text content가 HTML에 포함되어야 함
+    expect(html).toContain('Hello')
+    // Instance의 좌표(x: 50)가 wrapper에 적용되어야 함
+    expect(html).toContain('left: 50px')
+  })
+
+  it('master가 없는 Instance는 주석 fallback 포함', () => {
+    const inst: AppNode = {
+      id: 'x',
+      type: 'instance',
+      name: 'Broken',
+      parentId: null,
+      childIds: [],
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      rotation: 0,
+      zIndex: 0,
+      visible: true,
+      locked: false,
+      style: {},
+      data: { masterId: 'nope', overrides: {} },
+    }
+
+    const html = exportHtml(makeInstanceProject(inst, {}))
+    expect(html).toContain('missing master')
   })
 })
