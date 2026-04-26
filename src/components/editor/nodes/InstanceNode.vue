@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import type { AppNode, InstanceNode as InstanceNodeType } from '@/types/node'
 import MasterSubtree from './MasterSubtree.vue'
+import { nodeBoxStyle } from '@/utils/nodePresentation'
+import { useNodeInteraction } from '@/composables/useNodeInteraction'
 
 defineOptions({ name: 'InstanceNode' })
 
@@ -10,9 +12,11 @@ defineOptions({ name: 'InstanceNode' })
  * Instance 노드 entry 렌더 컴포넌트.
  * masters에서 참조 master를 조회해 MasterSubtree로 내부 트리를 펼친다.
  * master가 없으면 회색 placeholder를 표시한다 (Phase 19a는 블랙박스 정책 — 내부 선택 X).
+ * 표준 노드 패턴 준수: data-node-id, nodeBoxStyle, @click, node--selected 적용.
  */
 const props = defineProps<{ node: InstanceNodeType }>()
 const editor = useEditorStore()
+const { isSelected, onClick } = useNodeInteraction(() => props.node.id)
 
 /** 참조 master (없으면 null) */
 const master = computed(() => editor.masters[props.node.data.masterId] ?? null)
@@ -36,15 +40,22 @@ const rootChildren = computed<AppNode[]>(() => {
 <template>
   <div
     v-if="!master || !rootFrame"
-    class="instance-missing"
-    :style="{
-      width: node.width + 'px',
-      height: node.height + 'px',
-    }"
+    class="node node--instance node--instance-missing"
+    :class="{ 'node--selected': isSelected }"
+    :style="nodeBoxStyle(node)"
+    :data-node-id="node.id"
+    @click="onClick"
   >
     Missing master: {{ node.data.masterId }}
   </div>
-  <div v-else class="instance-wrapper">
+  <div
+    v-else
+    class="node node--instance"
+    :class="{ 'node--selected': isSelected }"
+    :style="nodeBoxStyle(node)"
+    :data-node-id="node.id"
+    @click="onClick"
+  >
     <MasterSubtree
       v-for="child in rootChildren"
       :key="child.id"
@@ -55,7 +66,7 @@ const rootChildren = computed<AppNode[]>(() => {
 </template>
 
 <style lang="scss" scoped>
-.instance-missing {
+.node--instance-missing {
   border: 1px dashed #999;
   color: #999;
   display: flex;
@@ -63,10 +74,5 @@ const rootChildren = computed<AppNode[]>(() => {
   justify-content: center;
   font-size: 12px;
   box-sizing: border-box;
-}
-.instance-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
 }
 </style>
