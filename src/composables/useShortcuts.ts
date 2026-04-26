@@ -34,6 +34,7 @@ const NUDGE_STEP_LARGE = 10
  * - Cmd/Ctrl + Shift + ]       : 선택 노드 맨 위로 (bringToFront)
  * - Cmd/Ctrl + Shift + [       : 선택 노드 맨 아래로 (bringToBack)
  * - Cmd/Ctrl + Alt + K         : 선택 Frame을 Component로 변환
+ * - Cmd/Ctrl + Alt + B         : 선택 Instance를 Frame 트리로 detach (Figma 관례)
  *
  * `Cmd`(metaKey)와 `Ctrl`(ctrlKey) 모두 허용해 macOS/Windows 양쪽에서 동일하게 동작한다.
  * 입력 요소(input/textarea/contentEditable) 포커스 중에는 모든 단축키 무시.
@@ -101,6 +102,17 @@ export const useShortcuts = (): void => {
       const node = editor.nodes[id]
       if (!node || node.type !== 'frame') return
       editor.createComponent(id)
+      return
+    }
+
+    // Cmd/Ctrl + Alt + B : Instance를 Frame으로 detach (Figma 관례)
+    if (cmd && event.altKey && key === 'b') {
+      event.preventDefault()
+      const id = editor.selectedId
+      if (!id) return
+      const node = editor.nodes[id]
+      if (!node || node.type !== 'instance') return
+      editor.detachInstance(id)
       return
     }
 

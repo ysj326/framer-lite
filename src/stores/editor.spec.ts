@@ -535,3 +535,65 @@ describe('createComponent (Frame → Master 변환)', () => {
     expect(Object.keys(editor.masters)).toHaveLength(0)
   })
 })
+
+describe('detachInstance (Instance → Frame 복원)', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
+  it('Instance를 다시 Frame + 자식 트리로 복원한다 (master는 유지)', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode({ x: 10, y: 20, width: 100, height: 50, name: 'Card' })
+    editor.addNode(frame, null)
+    const child = createTextNode({ x: 5, y: 5, width: 50, height: 20, content: 'hi' })
+    editor.addNode(child, frame.id)
+    editor.createComponent(frame.id)
+
+    const masterCount = Object.keys(editor.masters).length
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
+
+    const ok = editor.detachInstance(frame.id)
+    expect(ok).toBe(true)
+    expect(editor.nodes[frame.id]!.type).toBe('frame')
+    // master는 라이브러리에 유지
+    expect(Object.keys(editor.masters)).toHaveLength(masterCount)
+    // 자식이 page.nodes에 들어옴 (id는 새로 발급되므로 개수로 검증)
+    const restoredFrame = editor.nodes[frame.id] as FrameNode
+    expect(restoredFrame.childIds).toHaveLength(1)
+    const newChildId = restoredFrame.childIds[0]!
+    const restoredChild = editor.nodes[newChildId]
+    expect(restoredChild?.type).toBe('text')
+  })
+
+  it('Instance가 아닌 노드 대상이면 false 반환, 상태 불변', () => {
+    const editor = useEditorStore()
+    const text = createTextNode({ x: 0, y: 0, width: 50, height: 20, content: 'x' })
+    editor.addNode(text, null)
+    const before = JSON.stringify({ nodes: editor.nodes, masters: editor.masters })
+    expect(editor.detachInstance(text.id)).toBe(false)
+    expect(JSON.stringify({ nodes: editor.nodes, masters: editor.masters })).toBe(before)
+  })
+
+  it('detach는 단일 undo 단위 — undo 시 Instance로 돌아옴', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode({ x: 0, y: 0, width: 100, height: 100 })
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    editor.detachInstance(frame.id)
+    expect(editor.nodes[frame.id]!.type).toBe('frame')
+    editor.undo()
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
+  })
+
+  it('같은 master를 두 instance가 참조해도 detach가 다른 instance에 영향 없음', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode({ x: 0, y: 0, width: 100, height: 100, name: 'Card' })
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    // 같은 instance 복제 → 같은 master 참조
+    const dupId = editor.duplicateNode(frame.id)!
+    editor.detachInstance(frame.id)
+    // 다른 instance는 영향 없음
+    expect(editor.nodes[dupId]!.type).toBe('instance')
+    // master 유지
+    expect(Object.keys(editor.masters)).toHaveLength(1)
+  })
+})

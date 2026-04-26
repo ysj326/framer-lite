@@ -247,4 +247,28 @@ describe('useShortcuts', () => {
     )
     expect(editor.nodes[text.id]!.type).toBe('text')
   })
+
+  it('Cmd+Alt+B: Instance가 선택돼 있으면 detachInstance를 호출한다', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode()
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    editor.select(frame.id)
+    expect(editor.nodes[frame.id]!.type).toBe('instance')
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'b', metaKey: true, altKey: true }),
+    )
+    expect(editor.nodes[frame.id]!.type).toBe('frame')
+  })
+
+  it('Cmd+Alt+B: Instance가 아닌 선택이면 no-op', () => {
+    const editor = useEditorStore()
+    const text = createTextNode()
+    editor.addNode(text, null)
+    editor.select(text.id)
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'b', metaKey: true, altKey: true }),
+    )
+    expect(editor.nodes[text.id]!.type).toBe('text')
+  })
 })

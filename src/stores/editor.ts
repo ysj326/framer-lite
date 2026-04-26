@@ -214,6 +214,73 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   /**
+   * Instance 노드를 풀어 다시 일반 Frame 트리로 복원한다.
+   * - master는 라이브러리에 그대로 유지 (다른 instance 영향 없음)
+   * - master 자손 노드는 새 nanoid로 deep-copy되어 page.nodes에 삽입 (id 충돌 방지)
+   * - 새 root Frame은 instance와 같은 id를 재사용해 page.rootIds·parent.childIds 호환 유지
+   * - Instance의 x/y/w/h/rotation/visible/locked/zIndex/parentId 그대로 새 Frame이 계승
+   * - 단일 undo 단위로 commit
+   *
+   * @param instanceId 풀어낼 instance 노드 id
+   * @returns 성공 여부 (instance가 아니거나 master가 없으면 false)
+   */
+  const detachInstance = (instanceId: string): boolean => {
+    const inst = nodes.value[instanceId]
+    if (!inst || inst.type !== 'instance') return false
+    const master = masters.value[inst.data.masterId]
+    if (!master) return false
+    const masterRoot = master.nodes[master.rootId]
+    if (!masterRoot || masterRoot.type !== 'frame') return false
+
+    history.commit(snapshot())
+
+    // master.nodes 안의 모든 노드 id를 새 id로 remap
+    // (단, root는 instanceId를 재사용해 parent.childIds·page.rootIds와 호환)
+    const idMap = new Map<string, string>()
+    for (const oldId of Object.keys(master.nodes)) {
+      idMap.set(oldId, oldId === master.rootId ? instanceId : nanoid())
+    }
+
+    const remap = (id: string): string => idMap.get(id) ?? id
+
+    const nextNodes: Record<string, AppNode> = { ...nodes.value }
+    delete nextNodes[instanceId]   // 기존 instance 제거
+
+    for (const [oldId, mNode] of Object.entries(master.nodes)) {
+      const newId = remap(oldId)
+      if (oldId === master.rootId) {
+        // 새 root Frame: instance의 좌표/크기/회전/parent/zIndex/visible/locked 계승
+        const rootClone: AppNode = {
+          ...(mNode as AppNode),
+          id: newId,
+          parentId: inst.parentId,
+          childIds: (mNode as AppNode).childIds.map(remap),
+          x: inst.x,
+          y: inst.y,
+          width: inst.width,
+          height: inst.height,
+          rotation: inst.rotation ?? 0,
+          zIndex: inst.zIndex,
+          visible: inst.visible,
+          locked: inst.locked,
+        }
+        nextNodes[newId] = rootClone
+      } else {
+        const cloned: AppNode = {
+          ...(mNode as AppNode),
+          id: newId,
+          parentId: mNode.parentId !== null ? remap(mNode.parentId) : null,
+          childIds: mNode.childIds.map(remap),
+        }
+        nextNodes[newId] = cloned
+      }
+    }
+
+    nodes.value = nextNodes
+    return true
+  }
+
+  /**
    * 노드를 깊은 복제한다(Frame이면 후손까지). 새 루트는 원본 바로 다음 위치에 삽입.
    * @param id 복제할 노드 id
    * @returns 복제된 새 루트 id (원본이 없으면 null)
@@ -442,6 +509,7 @@ export const useEditorStore = defineStore('editor', () => {
     updateNode,
     deleteNode,
     createComponent,
+    detachInstance,
     duplicateNode,
     moveNode,
     setZIndex,

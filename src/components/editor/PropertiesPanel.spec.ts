@@ -110,4 +110,36 @@ describe('PropertiesPanel', () => {
     await w.get('button.create-component').trigger('click')
     expect(editor.nodes[frameId]!.type).toBe('instance')
   })
+
+  it('Instance 선택 시 "Detach Instance" 버튼이 노출된다', () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode()
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    editor.select(frame.id)
+    const w = mount(PropertiesPanel)
+    expect(w.text()).toContain('Detach Instance')
+    expect(w.text()).not.toContain('Create Component')
+  })
+
+  it('Detach Instance 버튼 클릭 시 Instance가 Frame으로 복원된다', async () => {
+    const editor = useEditorStore()
+    const frame = createFrameNode()
+    editor.addNode(frame, null)
+    editor.createComponent(frame.id)
+    editor.select(frame.id)
+    const frameId = frame.id
+    const w = mount(PropertiesPanel)
+    await w.get('button.detach-instance').trigger('click')
+    expect(editor.nodes[frameId]!.type).toBe('frame')
+  })
+
+  it('Frame/Text 등 Instance가 아닌 노드 선택 시 "Detach Instance" 버튼은 숨겨진다', () => {
+    const editor = useEditorStore()
+    const node = createTextNode({ name: 'Hello' })
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const w = mount(PropertiesPanel)
+    expect(w.text()).not.toContain('Detach Instance')
+  })
 })

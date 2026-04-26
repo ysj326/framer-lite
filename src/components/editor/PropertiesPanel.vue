@@ -17,6 +17,16 @@ const onCreateComponent = (): void => {
   if (editor.selectedNode.type !== 'frame') return
   editor.createComponent(editor.selectedNode.id)
 }
+
+/**
+ * 현재 선택된 Instance를 다시 Frame 트리로 복원한다.
+ * editor.detachInstance가 성공하면 같은 id가 Frame이 되어 선택 상태도 그대로 유지된다.
+ */
+const onDetachInstance = (): void => {
+  if (!editor.selectedNode) return
+  if (editor.selectedNode.type !== 'instance') return
+  editor.detachInstance(editor.selectedNode.id)
+}
 </script>
 
 <template>
@@ -37,6 +47,14 @@ const onCreateComponent = (): void => {
         @click="onCreateComponent"
       >
         Create Component
+      </button>
+      <button
+        v-if="editor.selectedNode.type === 'instance'"
+        type="button"
+        class="detach-instance"
+        @click="onDetachInstance"
+      >
+        Detach Instance
       </button>
       <CommonProperties :node="editor.selectedNode" />
       <TextProperties v-if="editor.selectedNode.type === 'text'" :node="editor.selectedNode" />
@@ -96,5 +114,18 @@ const onCreateComponent = (): void => {
   cursor: pointer;
   border-radius: 3px;
   &:hover { background: rgba($accent, 0.12); }
+}
+
+.detach-instance {
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: $space-sm;
+  border: 1px solid $accent;
+  background: rgba($accent, 0.06);
+  color: $accent;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  &:hover { background: rgba($accent, 0.18); }
 }
 </style>
