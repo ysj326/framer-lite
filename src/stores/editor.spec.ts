@@ -534,6 +534,24 @@ describe('createComponent (Frame → Master 변환)', () => {
     expect(editor.nodes[frame.id]!.type).toBe('frame')
     expect(Object.keys(editor.masters)).toHaveLength(0)
   })
+
+  it('subtree에 instance가 있는 Frame은 변환 거부 (false 반환, history 변경 없음)', () => {
+    const editor = useEditorStore()
+    // Frame A에 자식 Frame B 추가 → B를 Component로 → A 안에 instance 생김
+    const frameA = createFrameNode({ x: 0, y: 0, width: 200, height: 200 })
+    editor.addNode(frameA, null)
+    const frameB = createFrameNode({ x: 10, y: 10, width: 50, height: 50 })
+    editor.addNode(frameB, frameA.id)
+    editor.createComponent(frameB.id)   // B → instance, A의 자식이 instance가 됨
+    const pastBefore = editor.canUndo
+
+    const ok = editor.createComponent(frameA.id)
+    expect(ok).toBe(false)
+    // history past 변경 없음
+    expect(editor.canUndo).toBe(pastBefore)
+    // A는 여전히 frame
+    expect(editor.nodes[frameA.id]!.type).toBe('frame')
+  })
 })
 
 describe('detachInstance (Instance → Frame 복원)', () => {

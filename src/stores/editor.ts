@@ -178,9 +178,15 @@ export const useEditorStore = defineStore('editor', () => {
     const frame = nodes.value[frameId]
     if (!frame || frame.type !== 'frame') return false
 
-    history.commit(snapshot())
+    // 사전 검증: subtree에 instance가 있으면 변환 불가 (조용히 false)
+    let master: Master
+    try {
+      master = buildMasterFromFrame(nodes.value, frameId, masters.value)
+    } catch {
+      return false
+    }
 
-    const master = buildMasterFromFrame(nodes.value, frameId, masters.value)
+    history.commit(snapshot())
 
     // subtree(프레임 + 자손)를 page.nodes에서 제거
     const toRemove = Object.keys(master.nodes)
