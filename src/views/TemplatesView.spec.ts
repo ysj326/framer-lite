@@ -58,6 +58,7 @@ const makeSavedProject = (pageName: string): Project => ({
     rootIds: [],
   },
   nodes: {},
+  masters: {},
   updatedAt: 0,
 })
 

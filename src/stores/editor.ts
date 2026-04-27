@@ -2,11 +2,13 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { nanoid } from 'nanoid'
 import { cloneDeep } from 'lodash-es'
-import type { AppNode } from '@/types/node'
+import type { AppNode, InstanceNode } from '@/types/node'
 import type { Page, Project } from '@/types/project'
+import type { Master } from '@/types/master'
 import * as tree from '@/utils/nodeTree'
 import { useHistoryStore, type EditorSnapshot } from './history'
 import { CURRENT_VERSION } from '@/utils/serialize'
+import { buildMasterFromFrame } from '@/utils/masterFactory'
 
 /**
  * 빈 프로젝트의 기본 페이지를 만든다.
@@ -31,6 +33,8 @@ export const useEditorStore = defineStore('editor', () => {
   const nodes = ref<Record<string, AppNode>>({})
   const page = ref<Page>(createDefaultPage())
   const selectedId = ref<string | null>(null)
+  /** 재사용 컴포넌트 정의 맵. 구버전 JSON 로드 시 빈 객체로 기본값 주입 */
+  const masters = ref<Record<string, Master>>({})
 
   /**
    * 현재 인플레이스 편집 중인 노드 id.
@@ -66,6 +70,7 @@ export const useEditorStore = defineStore('editor', () => {
   const snapshot = (): EditorSnapshot => ({
     nodes: nodes.value,
     page: page.value,
+    masters: masters.value,
   })
 
   /**
@@ -76,6 +81,7 @@ export const useEditorStore = defineStore('editor', () => {
   const applySnapshot = (snap: EditorSnapshot): void => {
     nodes.value = cloneDeep(snap.nodes)
     page.value = cloneDeep(snap.page)
+    masters.value = cloneDeep(snap.masters ?? {})
     if (selectedId.value !== null && !nodes.value[selectedId.value]) {
       selectedId.value = null
     }
@@ -160,6 +166,127 @@ export const useEditorStore = defineStore('editor', () => {
   }
 
   /**
+   * 선택된 Frame 노드를 Master로 등록하고, 그 자리를 Instance 노드로 치환한다.
+   * frameId가 존재하지 않거나 type이 'frame'이 아니면 no-op, false 반환.
+   * 성공 시 history에 직전 상태가 commit돼 단일 undo 단위를 이룬다.
+   * master.rootId는 원본 frameId를 그대로 사용하며(별도 namespace), Instance도
+   * 원본 frameId를 재사용해 삽입된다 — undo 시 같은 id로 복원되어 UX 일관.
+   * @param frameId 대상 Frame 노드 id
+   * @returns 변환 성공 여부
+   */
+  const createComponent = (frameId: string): boolean => {
+    const frame = nodes.value[frameId]
+    if (!frame || frame.type !== 'frame') return false
+
+    // 사전 검증: subtree에 instance가 있으면 변환 불가 (조용히 false)
+    let master: Master
+    try {
+      master = buildMasterFromFrame(nodes.value, frameId, masters.value)
+    } catch {
+      return false
+    }
+
+    history.commit(snapshot())
+
+    // subtree(프레임 + 자손)를 page.nodes에서 제거
+    const toRemove = Object.keys(master.nodes)
+    const nextNodes: Record<string, AppNode> = { ...nodes.value }
+    for (const id of toRemove) delete nextNodes[id]
+
+    // 원본 Frame 위치에 Instance를 삽입 (같은 id 재사용)
+    const instance: InstanceNode = {
+      id: frameId,
+      type: 'instance',
+      name: master.name,
+      parentId: frame.parentId,
+      childIds: [],
+      x: frame.x,
+      y: frame.y,
+      width: frame.width,
+      height: frame.height,
+      rotation: frame.rotation ?? 0,
+      zIndex: frame.zIndex,
+      visible: frame.visible,
+      locked: frame.locked,
+      style: {},
+      data: { masterId: master.id, overrides: {} },
+    }
+    nextNodes[frameId] = instance
+
+    nodes.value = nextNodes
+    masters.value = { ...masters.value, [master.id]: master }
+
+    return true
+  }
+
+  /**
+   * Instance 노드를 풀어 다시 일반 Frame 트리로 복원한다.
+   * - master는 라이브러리에 그대로 유지 (다른 instance 영향 없음)
+   * - master 자손 노드는 새 nanoid로 deep-copy되어 page.nodes에 삽입 (id 충돌 방지)
+   * - 새 root Frame은 instance와 같은 id를 재사용해 page.rootIds·parent.childIds 호환 유지
+   * - Instance의 x/y/w/h/rotation/visible/locked/zIndex/parentId 그대로 새 Frame이 계승
+   * - 단일 undo 단위로 commit
+   *
+   * @param instanceId 풀어낼 instance 노드 id
+   * @returns 성공 여부 (instance가 아니거나 master가 없으면 false)
+   */
+  const detachInstance = (instanceId: string): boolean => {
+    const inst = nodes.value[instanceId]
+    if (!inst || inst.type !== 'instance') return false
+    const master = masters.value[inst.data.masterId]
+    if (!master) return false
+    const masterRoot = master.nodes[master.rootId]
+    if (!masterRoot || masterRoot.type !== 'frame') return false
+
+    history.commit(snapshot())
+
+    // master.nodes 안의 모든 노드 id를 새 id로 remap
+    // (단, root는 instanceId를 재사용해 parent.childIds·page.rootIds와 호환)
+    const idMap = new Map<string, string>()
+    for (const oldId of Object.keys(master.nodes)) {
+      idMap.set(oldId, oldId === master.rootId ? instanceId : nanoid())
+    }
+
+    const remap = (id: string): string => idMap.get(id) ?? id
+
+    const nextNodes: Record<string, AppNode> = { ...nodes.value }
+    delete nextNodes[instanceId]   // 기존 instance 제거
+
+    for (const [oldId, mNode] of Object.entries(master.nodes)) {
+      const newId = remap(oldId)
+      if (oldId === master.rootId) {
+        // 새 root Frame: instance의 좌표/크기/회전/parent/zIndex/visible/locked 계승
+        const rootClone: AppNode = {
+          ...(mNode as AppNode),
+          id: newId,
+          parentId: inst.parentId,
+          childIds: (mNode as AppNode).childIds.map(remap),
+          x: inst.x,
+          y: inst.y,
+          width: inst.width,
+          height: inst.height,
+          rotation: inst.rotation ?? 0,
+          zIndex: inst.zIndex,
+          visible: inst.visible,
+          locked: inst.locked,
+        }
+        nextNodes[newId] = rootClone
+      } else {
+        const cloned: AppNode = {
+          ...(mNode as AppNode),
+          id: newId,
+          parentId: mNode.parentId !== null ? remap(mNode.parentId) : null,
+          childIds: mNode.childIds.map(remap),
+        }
+        nextNodes[newId] = cloned
+      }
+    }
+
+    nodes.value = nextNodes
+    return true
+  }
+
+  /**
    * 노드를 깊은 복제한다(Frame이면 후손까지). 새 루트는 원본 바로 다음 위치에 삽입.
    * @param id 복제할 노드 id
    * @returns 복제된 새 루트 id (원본이 없으면 null)
@@ -225,6 +352,24 @@ export const useEditorStore = defineStore('editor', () => {
    * @param id 이동할 노드 id
    * @param delta +1 = 한 단계 뒤(인덱스 증가), -1 = 한 단계 앞(인덱스 감소)
    */
+  /**
+   * 같은 부모 형제 배열을 받아 각 노드의 zIndex 필드를 새 인덱스로 동기화한 노드 맵을 반환한다.
+   * 배열 순서가 z-order의 진실이므로 캐시(zIndex 필드)도 그에 맞춰 갱신해 두면
+   * 렌더(`nodeBoxStyle`)와 PropertiesPanel Z 표시가 일관된다.
+   * @param siblings 새 순서의 형제 id 배열
+   * @returns siblings의 zIndex가 갱신된 nodes Record
+   */
+  const syncZIndicesToOrder = (siblings: string[]): Record<string, AppNode> => {
+    const updated: Record<string, AppNode> = { ...nodes.value }
+    siblings.forEach((sid, i) => {
+      const n = updated[sid]
+      if (n && n.zIndex !== i) {
+        updated[sid] = { ...n, zIndex: i } as AppNode
+      }
+    })
+    return updated
+  }
+
   const reorder = (id: string, delta: number): void => {
     const node = nodes.value[id]
     if (!node) return
@@ -243,13 +388,15 @@ export const useEditorStore = defineStore('editor', () => {
     next[idx] = next[newIdx]!
     next[newIdx] = tmp
 
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
@@ -273,13 +420,15 @@ export const useEditorStore = defineStore('editor', () => {
     history.commit(snapshot())
     const next = siblings.filter((sid) => sid !== id)
     next.push(id)
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
@@ -303,13 +452,15 @@ export const useEditorStore = defineStore('editor', () => {
     history.commit(snapshot())
     const next = siblings.filter((sid) => sid !== id)
     next.unshift(id)
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
@@ -322,6 +473,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const loadProject = (project: Project): void => {
     nodes.value = project.nodes
+    masters.value = project.masters ?? {}
     page.value = project.page
     selectedId.value = null
     editingId.value = null
@@ -333,6 +485,7 @@ export const useEditorStore = defineStore('editor', () => {
    */
   const reset = (): void => {
     nodes.value = {}
+    masters.value = {}
     page.value = createDefaultPage()
     selectedId.value = null
     editingId.value = null
@@ -349,6 +502,7 @@ export const useEditorStore = defineStore('editor', () => {
     name: page.value.name,
     page: page.value,
     nodes: nodes.value,
+    masters: masters.value,
     updatedAt: Date.now(),
   })
 
@@ -373,6 +527,7 @@ export const useEditorStore = defineStore('editor', () => {
     page,
     selectedId,
     editingId,
+    masters,
     selectedNode,
     rootNodes,
     canUndo,
@@ -383,6 +538,8 @@ export const useEditorStore = defineStore('editor', () => {
     addNode,
     updateNode,
     deleteNode,
+    createComponent,
+    detachInstance,
     duplicateNode,
     moveNode,
     setZIndex,

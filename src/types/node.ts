@@ -100,10 +100,30 @@ export interface ShapeNode extends BaseNode {
 }
 
 /**
+ * Instance 노드 — Master 정의를 참조해 그 트리를 재귀 렌더한다.
+ *
+ * `childIds`는 항상 빈 배열로 유지한다 (master 트리는 참조만 할 뿐 자식을 직접 소유하지 않음).
+ * Instance의 `x, y, width, height, rotation`은 Instance가 직접 소유하며,
+ * 자식(master 트리) 좌표는 master 내부 상대 좌표 그대로 쓴다 (19a 정책).
+ */
+export interface InstanceNode extends BaseNode {
+  type: 'instance'
+  data: {
+    /** 참조하는 Master id (반드시 Project.masters에 존재해야 함) */
+    masterId: string
+    /**
+     * 인스턴스별 override 맵. Phase 19a에서는 항상 빈 객체.
+     * Phase 19b에서 실제 override 타입으로 확장된다.
+     */
+    overrides: Record<string, never>
+  }
+}
+
+/**
  * 애플리케이션에서 다루는 모든 노드의 합집합 타입.
  * `type` 필드로 narrowing 가능하다.
  */
-export type AppNode = TextNode | ImageNode | ButtonNode | FrameNode | ShapeNode
+export type AppNode = TextNode | ImageNode | ButtonNode | FrameNode | ShapeNode | InstanceNode
 
 /** 노드 타입 리터럴 */
 export type NodeType = AppNode['type']

@@ -42,7 +42,14 @@ const onMoveDown = (): void => editor.reorder(props.node.id, -1)
       :style="{ paddingLeft: `${depth * 12 + 8}px` }"
       @click="onSelect"
     >
-      <span class="layer-item__name">{{ node.name }}</span>
+      <span class="layer-item__name">
+        <span
+          v-if="node.type === 'instance'"
+          class="layer-item__icon"
+          title="Component Instance"
+        >◆</span>
+        {{ node.name }}
+      </span>
       <span class="layer-item__type">{{ node.type }}</span>
       <button
         type="button"
@@ -107,6 +114,12 @@ const onMoveDown = (): void => editor.reorder(props.node.id, -1)
   font-size: 10px;
   color: $text-muted;
   text-transform: uppercase;
+}
+
+.layer-item__icon {
+  font-size: 10px;
+  color: $accent;
+  margin-right: 4px;
 }
 
 .layer-item__btn {

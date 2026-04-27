@@ -104,4 +104,51 @@ describe('LayerItem', () => {
     // depth*12 + 8 = 32px
     expect(style).toContain('32px')
   })
+
+  it('Instance 노드는 자식(master 트리)을 LayersPanel에 노출하지 않는다', () => {
+    const editor = useEditorStore()
+    editor.masters.m1 = {
+      id: 'm1', name: 'Card', rootId: 'r', createdAt: 0, updatedAt: 0,
+      nodes: {
+        r: {
+          id: 'r', type: 'frame', name: 'root', parentId: null,
+          childIds: ['c'], x: 0, y: 0, width: 10, height: 10, rotation: 0,
+          zIndex: 0, visible: true, locked: false, style: {}, data: {},
+        },
+        c: {
+          id: 'c', type: 'text', name: 'child-in-master', parentId: 'r',
+          childIds: [], x: 0, y: 0, width: 10, height: 10, rotation: 0,
+          zIndex: 0, visible: true, locked: false, style: {},
+          data: { content: 'x' },
+        },
+      },
+    }
+    const inst = {
+      id: 'i', type: 'instance' as const, name: 'Card',
+      parentId: null, childIds: [],
+      x: 0, y: 0, width: 10, height: 10, rotation: 0,
+      zIndex: 0, visible: true, locked: false, style: {},
+      data: { masterId: 'm1', overrides: {} },
+    }
+    editor.nodes[inst.id] = inst
+
+    const wrapper = mount(LayerItem, { props: { node: inst, depth: 0 } })
+    // master 안의 child 이름이 LayersPanel에 노출되어서는 안 됨
+    expect(wrapper.text()).not.toContain('child-in-master')
+  })
+
+  it('Instance 노드의 라벨 앞에 다이아몬드 ◆ 아이콘이 표시된다', () => {
+    const editor = useEditorStore()
+    const inst = {
+      id: 'i', type: 'instance' as const, name: 'MyCard',
+      parentId: null, childIds: [],
+      x: 0, y: 0, width: 10, height: 10, rotation: 0,
+      zIndex: 0, visible: true, locked: false, style: {},
+      data: { masterId: 'mx', overrides: {} },
+    }
+    editor.nodes[inst.id] = inst
+
+    const wrapper = mount(LayerItem, { props: { node: inst, depth: 0 } })
+    expect(wrapper.text()).toContain('◆')
+  })
 })

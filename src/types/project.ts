@@ -1,4 +1,5 @@
 import type { AppNode } from './node'
+import type { Master } from './master'
 
 /**
  * 단일 페이지 메타데이터.
@@ -36,6 +37,8 @@ export interface Project {
   page: Page
   /** 모든 노드의 평면 저장소 (id 기반 조회) */
   nodes: Record<string, AppNode>
+  /** 재사용 컴포넌트 정의 맵. 구버전 JSON 로드 시 빈 객체로 기본값 주입 */
+  masters: Record<string, Master>
   /** 마지막 갱신 시각 (Date.now()) */
   updatedAt: number
 }

@@ -118,3 +118,29 @@
 - [ ] 전체 회귀 수동 시나리오 (사용자 검증)
 - **에러 토스트**: 후순위로 미루고 README 한계 섹션에 명시
 - **검증:** 13 test files / 123 tests, type-check 통과, **production build 성공** (HTML 0.43 KB / CSS 10.35 KB / JS 384 KB · 130 KB gzip)
+
+## Phase 13–18 (별도 commit으로 진행된 작업 — 역반영)
+- [x] Phase 13–14: TDD 보강 (초기 커밋에 포함)
+- [x] Phase 15: 다중 슬롯 시스템 (프로젝트 저장 공간 최대 5개) + Confirm/SlotPicker 모달
+- [x] Phase 16: Text/Button 더블클릭 인플레이스 편집
+- [x] Phase 17: 키보드 nudge + z-order 단축키
+- [x] Phase 18: 노드 회전(rotation) 지원
+
+## Phase 19a — 컴포넌트 심볼 시스템 (핵심 모델)
+- [x] `Master` 타입 + `Project.masters` 필드 + `InstanceNode` NodeType
+- [x] `masterFactory` 순수 헬퍼 (uniqueMasterName, collectSubtree, buildMasterFromFrame)
+- [x] `EditorSnapshot`에 masters 포함 → undo/redo 대응
+- [x] `editor.createComponent(frameId)` 액션 (history 단일 단위 커밋)
+- [x] 직렬화 masters 왕복 + 구버전 JSON 마이그레이션 + 손상 master 드롭 (sanitizeMasters)
+- [x] HTML export — Instance inline expand + master 하위 노드 CSS 방출 + rootFrame style 계승 + missing master 주석 fallback
+- [x] `InstanceNode.vue` + `MasterSubtree.vue` 렌더 (master.nodes scope 주입)
+- [x] `NodeRenderer`에 instance 분기
+- [x] `LayerItem` Instance leaf 표시 + ◆ 아이콘
+- [x] `PropertiesPanel` "Create Component" 버튼 (Frame 한정)
+- [x] `useShortcuts` `Cmd/Ctrl+Alt+K`
+- [x] tsc --noEmit PASS / vitest 전체 PASS / production build 성공
+- [ ] 수동 회귀 (사용자 브라우저 확인) — Frame 생성 → Create Component → 시각 동일 → undo/redo → drag/resize → save/load → HTML export
+
+> **스펙 문서:** `docs/superpowers/specs/2026-04-24-phase-19a-component-symbol-core-design.md`
+> **플랜 문서:** `docs/superpowers/plans/2026-04-24-phase-19a-component-symbol-core.md`
+> **범위 밖 (후속 Phase):** override (19b), 다중 선택 심볼화 (19c), Assets 패널 + 우클릭 메뉴 (19d), Variants (19e, 선택), Nesting (19f, 선택)

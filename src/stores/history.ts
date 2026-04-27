@@ -3,14 +3,17 @@ import { ref, computed } from 'vue'
 import { cloneDeep } from 'lodash-es'
 import type { AppNode } from '@/types/node'
 import type { Page } from '@/types/project'
+import type { Master } from '@/types/master'
 
 /**
  * 에디터의 undo/redo 단위가 되는 상태 스냅샷.
  * `selectedId`는 데이터 변경의 일부가 아니므로 포함하지 않는다.
+ * masters는 컴포넌트 심볼 정의(Phase 19a)로, undo/redo 대상이다.
  */
 export interface EditorSnapshot {
   nodes: Record<string, AppNode>
   page: Page
+  masters: Record<string, Master>
 }
 
 /**

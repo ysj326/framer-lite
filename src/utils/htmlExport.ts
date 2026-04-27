@@ -1,6 +1,10 @@
 import type { Project } from '@/types/project'
 import type { AppNode } from '@/types/node'
+import type { Master } from '@/types/master'
 import { downloadBlob, safeFilename } from './download'
+
+/** instance 인라인 전개 최대 재귀 깊이 (19f Nesting 대비 안전장치) */
+const MAX_INSTANCE_DEPTH = 32
 
 /**
  * HTML 텍스트 노드 안에 들어갈 사용자 입력을 escape한다.
@@ -68,14 +72,18 @@ const buildNodeCss = (node: AppNode): string => {
 }
 
 /**
- * 노드 1개의 HTML 마크업을 만든다 (Frame이면 자식 재귀).
+ * 노드 1개의 HTML 마크업을 만든다 (Frame이면 자식 재귀, Instance이면 master 트리 인라인 전개).
  * @param node 대상 노드
- * @param nodes 전체 노드 맵 (자식 lookup)
+ * @param nodes 현재 scope의 노드 맵 (자식 lookup)
+ * @param masters 프로젝트 전체 master 맵 (instance 전개 시 참조)
+ * @param depth 현재 재귀 깊이 (MAX_INSTANCE_DEPTH 초과 시 fallback 주석 반환)
  * @returns HTML 문자열
  */
 const buildNodeHtml = (
   node: AppNode,
   nodes: Record<string, AppNode>,
+  masters: Record<string, Master>,
+  depth = 0,
 ): string => {
   const cls = `node node-${node.id}`
 
@@ -96,11 +104,43 @@ const buildNodeHtml = (
   if (node.type === 'shape') {
     return `<div class="${cls}"></div>`
   }
+  if (node.type === 'instance') {
+    // 재귀 깊이 초과 시 안전 fallback (19f Nesting 대비)
+    if (depth > MAX_INSTANCE_DEPTH) {
+      return `<!-- instance depth exceeded for ${node.id} -->`
+    }
+    const master: Master | undefined = masters[node.data.masterId]
+    if (!master) {
+      // master 정의 없음 → 주석 fallback
+      return `<!-- missing master: ${node.data.masterId} --><div class="${cls}"></div>`
+    }
+    // master rootFrame의 시각 속성을 먼저 적용하고, instance 자신의 position/size/rotation으로 덮어씀
+    const rootNode = master.nodes[master.rootId]
+    const rootStyleDecls: string[] = []
+    if (rootNode && rootNode.type === 'frame') {
+      const s = rootNode.style
+      if (s.opacity !== undefined) rootStyleDecls.push(`opacity: ${s.opacity}`)
+      if (s.backgroundColor) rootStyleDecls.push(`background-color: ${s.backgroundColor}`)
+      if (s.color) rootStyleDecls.push(`color: ${s.color}`)
+      if (s.fontSize !== undefined) rootStyleDecls.push(`font-size: ${s.fontSize}px`)
+      if (s.fontWeight !== undefined) rootStyleDecls.push(`font-weight: ${s.fontWeight}`)
+      if (s.borderRadius !== undefined) rootStyleDecls.push(`border-radius: ${s.borderRadius}px`)
+    }
+    const wrapperDecls = [...rootStyleDecls, ...collectNodeDecls(node)].join('; ')
+    const inner = rootNode
+      ? rootNode.childIds
+          .map((cid) => master.nodes[cid])
+          .filter((c): c is AppNode => c !== undefined)
+          .map((c) => buildNodeHtml(c, master.nodes, masters, depth + 1))
+          .join('\n')
+      : ''
+    return `<div class="${cls}" style="${wrapperDecls};">\n${inner}\n</div>`
+  }
   // frame
   const inner = node.childIds
     .map((cid) => nodes[cid])
     .filter((c): c is AppNode => c !== undefined)
-    .map((c) => buildNodeHtml(c, nodes))
+    .map((c) => buildNodeHtml(c, nodes, masters, depth))
     .join('\n')
   return `<div class="${cls}">\n${inner}\n</div>`
 }
@@ -112,13 +152,17 @@ const buildNodeHtml = (
  * @returns 완전한 HTML 문서 문자열
  */
 export const exportHtml = (project: Project): string => {
-  const allNodes = Object.values(project.nodes)
-  const cssRules = allNodes.map(buildNodeCss).join('\n  ')
+  // project.nodes와 모든 masters의 nodes를 합산, id 중복 시 나중 항목이 이기나 동일 id → 동일 rule이므로 무해
+  const allNodesMap = new Map<string, AppNode>([
+    ...Object.entries(project.nodes),
+    ...Object.values(project.masters).flatMap((m) => Object.entries(m.nodes)),
+  ])
+  const cssRules = [...allNodesMap.values()].map(buildNodeCss).join('\n  ')
 
   const rootMarkup = project.page.rootIds
     .map((id) => project.nodes[id])
     .filter((n): n is AppNode => n !== undefined)
-    .map((n) => buildNodeHtml(n, project.nodes))
+    .map((n) => buildNodeHtml(n, project.nodes, project.masters, 0))
     .join('\n')
 
   return `<!DOCTYPE html>
