@@ -20,7 +20,9 @@ const { isSelected, onClick } = useNodeInteraction(() => props.node.id)
 </template>
 
 <style lang="scss" scoped>
+// Frame은 자식 영역을 클립하지 않는다 (Figma "Clip content: OFF" 기본 동작과 일치).
+// 추후 Phase에서 per-Frame "clip content" 토글이 필요해지면 node.style에 새 필드 추가.
 .node--frame {
-  overflow: hidden;
+  overflow: visible;
 }
 </style>
