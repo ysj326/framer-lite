@@ -111,6 +111,19 @@ describe('PropertiesPanel', () => {
     expect(editor.nodes[frameId]!.type).toBe('instance')
   })
 
+  it('Frame 변환 직후 Create Component 버튼이 즉시 사라지고 Detach Instance가 나타난다 (반응성)', async () => {
+    const editor = useEditorStore()
+    const node = createFrameNode()
+    editor.addNode(node, null)
+    editor.select(node.id)
+    const w = mount(PropertiesPanel)
+    expect(w.text()).toContain('Create Component')
+    expect(w.text()).not.toContain('Detach Instance')
+    await w.get('button.create-component').trigger('click')
+    expect(w.text()).not.toContain('Create Component')
+    expect(w.text()).toContain('Detach Instance')
+  })
+
   it('Instance 선택 시 "Detach Instance" 버튼이 노출된다', () => {
     const editor = useEditorStore()
     const frame = createFrameNode()

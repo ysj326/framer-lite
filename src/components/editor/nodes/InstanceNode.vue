@@ -91,6 +91,13 @@ const wrapperStyle = computed<CSSProperties>(() => {
 </template>
 
 <style lang="scss" scoped>
+// Instance wrapper는 master 트리를 자식으로 품지만, FrameNode와 달리
+// 자기 영역 밖으로 나간 자식을 잘라내지 않는다 (Figma 동작 일치).
+// 명시적으로 overflow: visible을 설정해 어떤 cascade에도 의존하지 않도록 한다.
+.node--instance {
+  overflow: visible;
+}
+
 .node--instance-missing {
   border: 1px dashed #999;
   color: #999;
@@ -99,5 +106,6 @@ const wrapperStyle = computed<CSSProperties>(() => {
   justify-content: center;
   font-size: 12px;
   box-sizing: border-box;
+  overflow: visible;
 }
 </style>
