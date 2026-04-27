@@ -213,6 +213,33 @@ describe('editor store', () => {
       store.undo()
       expect(store.page.rootIds).toEqual([a.id, b.id])
     })
+
+    it('reorder 후 zIndex 필드가 새 배열 인덱스와 일치 (보조 캐시 동기화)', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      const c = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      store.addNode(c, null)
+      store.reorder(a.id, 1) // [b, a, c]
+      expect(store.nodes[b.id]!.zIndex).toBe(0)
+      expect(store.nodes[a.id]!.zIndex).toBe(1)
+      expect(store.nodes[c.id]!.zIndex).toBe(2)
+    })
+
+    it('Frame 자식 reorder 후에도 자식들 zIndex가 새 인덱스와 일치', () => {
+      const store = useEditorStore()
+      const frame = createFrameNode()
+      store.addNode(frame, null)
+      const c1 = createTextNode()
+      const c2 = createTextNode()
+      store.addNode(c1, frame.id)
+      store.addNode(c2, frame.id)
+      store.reorder(c1.id, 1) // [c2, c1]
+      expect(store.nodes[c2.id]!.zIndex).toBe(0)
+      expect(store.nodes[c1.id]!.zIndex).toBe(1)
+    })
   })
 
   describe('reset', () => {
@@ -300,6 +327,24 @@ describe('editor store', () => {
       const store = useEditorStore()
       expect(() => store.bringToFront('nope')).not.toThrow()
       expect(() => store.bringToBack('nope')).not.toThrow()
+    })
+
+    it('bringToFront/bringToBack 후 형제들의 zIndex가 새 배열 인덱스와 일치', () => {
+      const store = useEditorStore()
+      const a = createTextNode()
+      const b = createTextNode()
+      const c = createTextNode()
+      store.addNode(a, null)
+      store.addNode(b, null)
+      store.addNode(c, null)
+      store.bringToFront(a.id) // [b, c, a]
+      expect(store.nodes[b.id]!.zIndex).toBe(0)
+      expect(store.nodes[c.id]!.zIndex).toBe(1)
+      expect(store.nodes[a.id]!.zIndex).toBe(2)
+      store.bringToBack(a.id) // [a, b, c]
+      expect(store.nodes[a.id]!.zIndex).toBe(0)
+      expect(store.nodes[b.id]!.zIndex).toBe(1)
+      expect(store.nodes[c.id]!.zIndex).toBe(2)
     })
   })
 

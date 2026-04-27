@@ -352,6 +352,24 @@ export const useEditorStore = defineStore('editor', () => {
    * @param id 이동할 노드 id
    * @param delta +1 = 한 단계 뒤(인덱스 증가), -1 = 한 단계 앞(인덱스 감소)
    */
+  /**
+   * 같은 부모 형제 배열을 받아 각 노드의 zIndex 필드를 새 인덱스로 동기화한 노드 맵을 반환한다.
+   * 배열 순서가 z-order의 진실이므로 캐시(zIndex 필드)도 그에 맞춰 갱신해 두면
+   * 렌더(`nodeBoxStyle`)와 PropertiesPanel Z 표시가 일관된다.
+   * @param siblings 새 순서의 형제 id 배열
+   * @returns siblings의 zIndex가 갱신된 nodes Record
+   */
+  const syncZIndicesToOrder = (siblings: string[]): Record<string, AppNode> => {
+    const updated: Record<string, AppNode> = { ...nodes.value }
+    siblings.forEach((sid, i) => {
+      const n = updated[sid]
+      if (n && n.zIndex !== i) {
+        updated[sid] = { ...n, zIndex: i } as AppNode
+      }
+    })
+    return updated
+  }
+
   const reorder = (id: string, delta: number): void => {
     const node = nodes.value[id]
     if (!node) return
@@ -370,13 +388,15 @@ export const useEditorStore = defineStore('editor', () => {
     next[idx] = next[newIdx]!
     next[newIdx] = tmp
 
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
@@ -400,13 +420,15 @@ export const useEditorStore = defineStore('editor', () => {
     history.commit(snapshot())
     const next = siblings.filter((sid) => sid !== id)
     next.push(id)
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
@@ -430,13 +452,15 @@ export const useEditorStore = defineStore('editor', () => {
     history.commit(snapshot())
     const next = siblings.filter((sid) => sid !== id)
     next.unshift(id)
+    const synced = syncZIndicesToOrder(next)
     if (isRoot) {
+      nodes.value = synced
       page.value = { ...page.value, rootIds: next }
     } else {
       const parentId = node.parentId!
-      const parent = nodes.value[parentId]!
+      const parent = synced[parentId]!
       nodes.value = {
-        ...nodes.value,
+        ...synced,
         [parentId]: { ...parent, childIds: next } as AppNode,
       }
     }
