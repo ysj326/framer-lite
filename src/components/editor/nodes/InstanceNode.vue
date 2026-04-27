@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type CSSProperties } from 'vue'
 import { useEditorStore } from '@/stores/editor'
 import type { AppNode, InstanceNode as InstanceNodeType } from '@/types/node'
 import MasterSubtree from './MasterSubtree.vue'
@@ -35,6 +35,31 @@ const rootChildren = computed<AppNode[]>(() => {
     .map((id) => master.value!.nodes[id])
     .filter(Boolean) as AppNode[]
 })
+
+/**
+ * Instance wrapper에 적용할 최종 CSS.
+ * - 위치/크기/회전/zIndex/visibility는 Instance 자신의 좌표를 사용 (정책 B).
+ * - 시각 속성(backgroundColor/color/opacity/fontSize/fontWeight/borderRadius)은
+ *   Instance.style이 비어 있을 때 master rootFrame.style을 fallback으로 계승한다.
+ *   19b에서 Instance가 override를 가지면 Instance 값이 우선 적용된다.
+ *   HTML export(`htmlExport.ts`)의 wrapperDecls 합성 로직과 일치.
+ */
+const wrapperStyle = computed<CSSProperties>(() => {
+  const base = nodeBoxStyle(props.node)
+  const root = rootFrame.value
+  if (!root) return base
+  const rs = root.style
+  return {
+    ...base,
+    backgroundColor: base.backgroundColor ?? rs.backgroundColor,
+    color: base.color ?? rs.color,
+    opacity: base.opacity ?? rs.opacity,
+    fontSize: base.fontSize ?? (rs.fontSize != null ? `${rs.fontSize}px` : undefined),
+    fontWeight: base.fontWeight ?? rs.fontWeight,
+    borderRadius:
+      base.borderRadius ?? (rs.borderRadius != null ? `${rs.borderRadius}px` : undefined),
+  }
+})
 </script>
 
 <template>
@@ -52,7 +77,7 @@ const rootChildren = computed<AppNode[]>(() => {
     v-else
     class="node node--instance"
     :class="{ 'node--selected': isSelected }"
-    :style="nodeBoxStyle(node)"
+    :style="wrapperStyle"
     :data-node-id="node.id"
     @click="onClick"
   >
